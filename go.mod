@@ -1,3 +1,3 @@
-module codeberg.org/oluies/siida
+module github.com/oluies/siida
 
 go 1.26

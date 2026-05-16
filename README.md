@@ -41,8 +41,9 @@ achieved by:
   through JNI or by a pure-Scala BN254 implementation, depending on the
   outcome of feature `002`. Either way the codebase builds and tests on
   every architecture Pekko supports, including Apple Silicon.
-- **Dual CI**: GitHub Actions and Codeberg / Forgejo Actions kept in sync,
-  with Codeberg as the canonical home.
+- **Dual CI**: GitHub Actions is the canonical CI for now; a mirror
+  Forgejo Actions workflow is maintained so a future move to Codeberg
+  is a copy-and-push.
 - **Spec-driven development**: feature work happens through
   [GitHub Spec Kit][speckit] (`specs/NNN-*/`). Every migration chunk is a
   numbered feature spec with `spec.md`, `plan.md`, `tasks.md`.
