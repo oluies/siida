@@ -31,26 +31,80 @@ achieved by:
 
 ## What is new in Siida
 
-- **Modernised toolchain**: Go modules, Go 1.26, dual CI for GitHub Actions
-  and Codeberg / Forgejo Actions.
+- **Language shift to the JVM**: Vuvuzela is Go; Siida targets **Scala 3 +
+  Apache Pekko + Cats Effect 3**. Pekko is the Apache Software Foundation's
+  Apache-2.0 fork of Akka 2.6.x and is compatible with Siida's AGPL-3.0
+  licence; Lightbend's BSL-licensed Akka 2.7+ is not used.
 - **Pairing crypto migration**: the cgo / x86-64 assembly `bn256` package
-  (dclxvi) is being replaced with the pure-Go, actively maintained
-  [`consensys/gnark-crypto/ecc/bn254`][gnark]. This makes the codebase build
-  and test on every architecture Go targets, including Apple Silicon.
+  (dclxvi) used by Alpenhorn is being replaced with the actively maintained
+  [`consensys/gnark-crypto/ecc/bn254`][gnark], reached from the JVM either
+  through JNI or by a pure-Scala BN254 implementation, depending on the
+  outcome of feature `002`. Either way the codebase builds and tests on
+  every architecture Pekko supports, including Apple Silicon.
+- **Dual CI**: GitHub Actions and Codeberg / Forgejo Actions kept in sync,
+  with Codeberg as the canonical home.
 - **Spec-driven development**: feature work happens through
-  [GitHub Spec Kit][speckit] (`specs/NNN-*/`). Every migration chunk —
-  bootstrap, crypto port, mixnet port, agent-messaging layer — is a numbered
-  feature spec with `spec.md`, `plan.md`, `tasks.md`.
+  [GitHub Spec Kit][speckit] (`specs/NNN-*/`). Every migration chunk is a
+  numbered feature spec with `spec.md`, `plan.md`, `tasks.md`.
 - **Agent-messaging focus**: in addition to human chat, Siida targets
-  private message exchange between autonomous AI agents.
+  private message exchange between autonomous AI agents — including the
+  case where an agent is offline when a message is sent to it (see
+  feature `007`).
 
 [gnark]: https://github.com/Consensys/gnark-crypto
 [speckit]: https://github.com/github/spec-kit
 
+## Architectural direction (pre-constitution)
+
+A starting sketch, to be revised and recorded as the project constitution
+through `/speckit-constitution`:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Agent ingress boundary    │ NATS / gRPC / typed sockets             │
+├─────────────────────────────────────────────────────────────────────┤
+│  Siida client SDK          │ Scala 3 + Cats Effect 3 fibers          │
+│  (humans + agents)         │ multi-language SDKs later (gRPC)        │
+├─────────────────────────────────────────────────────────────────────┤
+│  Mixnet core               │ Pekko Cluster + Pekko Streams           │
+│  (coordinator / mixers)    │ Pekko Persistence for round durability  │
+│  Async delivery (007)      │ NATS JetStream as dead-drop OR dtn7-rs  │
+├─────────────────────────────────────────────────────────────────────┤
+│  Pairing crypto            │ gnark-crypto via JNI, OR pure-Scala     │
+│  (IBE / BLS for PKG)       │ bn254 — decided in feature 002          │
+├─────────────────────────────────────────────────────────────────────┤
+│  Build / lang              │ Scala 3 + Mill or sbt + Apache 2.0      │
+│                            │ Pekko + Cats Effect 3 + http4s          │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+Privacy-sensitive components stay inside the JVM mixnet core; NATS and
+DTN-style stores only appear at the *ingress boundary* and the *async
+delivery substrate*, never carrying round-aligned mix traffic directly.
+
+## Roadmap
+
+Specs are written and implemented in order. Each lives in `specs/NNN-name/`
+with `spec.md`, `plan.md`, `tasks.md`; we use Spec Kit's `/speckit-*`
+commands to produce them.
+
+| # | Spec | Scope |
+|---|---|---|
+| 000 | **Constitution** | Establish project principles, language stack, licence policy, threat-model commitments. Run `/speckit-constitution` first. |
+| 001 | `project-bootstrap` | Codify the Scala 3 + Pekko + Cats Effect 3 build, dual CI, repository layout. Revise this scaffold accordingly. |
+| 002 | `crypto-pairing` | Replace Alpenhorn's dclxvi `bn256` with a portable BN254 path (JNI to gnark-crypto vs. pure-Scala BN254). Port `ibe` and `bls`. |
+| 003 | `mixnet-server` | Coordinator, mixer, shuffle, onionbox on Pekko Streams. Round-based deterministic batch processing with explicit timing. |
+| 004 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
+| 005 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
+| 006 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
+| 007 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
+
+Past `007` likely lives a `008-chat-client` (replacing Vuvuzela's terminal
+`gocui` UI) and an `009-observability` (OpenTelemetry, ops dashboards).
+
 ## Status
 
-**Pre-alpha.** Project bootstrap in progress. See `specs/` for the active
-feature pipeline.
+**Pre-alpha.** Bootstrap scaffold in place; awaiting constitution.
 
 ## Lineage and licence
 
