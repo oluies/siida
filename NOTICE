@@ -1,0 +1,36 @@
+Siida
+Copyright (C) 2026 Örjan Lundberg and contributors
+
+This program is a derivative work of:
+
+    Vuvuzela: Scalable Private Messaging
+    Copyright (C) 2015-2016 David Lazar
+    https://github.com/vuvuzela/vuvuzela
+    Licensed under the GNU Affero General Public License, version 3 or later
+
+    Alpenhorn: a system for bootstrapping private communication
+    Copyright (C) 2016 David Lazar
+    https://github.com/vuvuzela/alpenhorn
+    Licensed under the GNU Affero General Public License, version 3 or later
+
+with additional contributions to those projects from
+Jelle van den Hooff, Nickolai Zeldovich, and Matei Zaharia.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the Licence, or (at your option) any
+later version. See the LICENSE file for the full text.
+
+------------------------------------------------------------------------------
+
+Cryptographic primitives in this repository derive in part from the following
+permissively-licensed code, whose original copyright notices are preserved at
+file scope:
+
+    BN-256 / BN-254 pairing primitives
+    Portions Copyright 2012 The Go Authors
+    Portions Copyright 2016 The Alpenhorn Authors
+    Distributed under a BSD-3-clause licence
+
+When the bn256-to-bn254 migration completes, this notice will be amended to
+credit the consensys/gnark-crypto project (Apache-2.0).

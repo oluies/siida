@@ -1,0 +1,21 @@
+# Go build artefacts
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+*.prof
+
+# Module download cache
+/vendor/
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local secrets and node-local state
+*.local
+*.env
+/data/

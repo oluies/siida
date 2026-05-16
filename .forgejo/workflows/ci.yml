@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Mirror of .github/workflows/ci.yml for Codeberg's Forgejo Actions runner.
+# Kept in sync deliberately so a forced move between hosts is a no-op.
+jobs:
+  build:
+    name: build / vet / test (Go ${{ matrix.go }})
+    runs-on: docker
+    container:
+      image: code.forgejo.org/oci/node:22-bookworm
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+
+      - name: go mod download
+        run: go mod download
+
+      - name: go build
+        run: go build ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -race -count=1 ./...
