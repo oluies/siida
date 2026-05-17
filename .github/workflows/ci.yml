@@ -11,28 +11,36 @@ permissions:
 
 jobs:
   build:
-    name: build / vet / test (Go ${{ matrix.go }})
+    name: build / test (JVM 21)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go: ["1.26"]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
         with:
-          go-version: ${{ matrix.go }}
-          cache: true
+          distribution: temurin
+          java-version: '21'
 
-      - name: go mod download
-        run: go mod download
+      - name: Cache Mill out
+        uses: actions/cache@v4
+        with:
+          path: |
+            out
+            ~/.cache/mill
+          key: mill-${{ runner.os }}-${{ hashFiles('.mill-version', 'build.mill') }}
+          restore-keys: |
+            mill-${{ runner.os }}-
 
-      - name: go build
-        run: go build ./...
+      - name: Check licence headers
+        run: make headers
 
-      - name: go vet
-        run: go vet ./...
+      - name: Compile all modules
+        run: make compile
 
-      - name: go test
-        run: go test -race -count=1 ./...
+      - name: Test all modules
+        run: make test
+
+      - name: Check CI parity
+        run: make ci-parity

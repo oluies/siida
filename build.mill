@@ -1,0 +1,181 @@
+// Siida — privacy-preserving messaging for human chat and AI-agent
+// messaging. Derived from Vuvuzela (David Lazar et al., SOSP 2015) and
+// the Alpenhorn key-bootstrap system.
+//
+// Copyright (C) 2026 Örjan Lundberg and contributors
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+// Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public
+// License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import mill._
+import mill.scalalib._
+
+// Pinned versions (research R1–R6). All upgrades require a constitution-
+// or feature-spec-level decision; no floating ranges (FR-011).
+object Versions {
+  val scala        = "3.6.3"
+  val pekko        = "1.1.3"
+  val catsEffect   = "3.5.7"
+  val munit        = "1.0.4"
+  val munitCatsEff = "2.0.0"
+}
+
+// Shared base for every Siida module. Pins the Scala version, the
+// scalac warning posture (-Werror is intentional: constitution
+// Principle IV's discipline at compile time), the common library
+// dependencies, and the licence-header gate (Principle III).
+trait SiidaModule extends ScalaModule {
+  def scalaVersion = Versions.scala
+
+  override def scalacOptions = T {
+    Seq(
+      "-Wunused:all",
+      "-Werror",
+      "-deprecation",
+      "-feature",
+      "-language:strictEquality",
+    )
+  }
+
+  override def ivyDeps = T {
+    Agg(
+      ivy"org.apache.pekko::pekko-actor-typed:${Versions.pekko}",
+      ivy"org.apache.pekko::pekko-stream:${Versions.pekko}",
+      ivy"org.typelevel::cats-effect:${Versions.catsEffect}",
+    )
+  }
+
+  // Wire the licence-header check as a transitive dep of compile (T009,
+  // FR-010). Every `./mill <module>.compile` runs the check first;
+  // build fails before any code is compiled if a header is missing.
+  override def compile = T {
+    SiidaBuild.millSiidaHeaderCheck()
+    super.compile()
+  }
+
+  trait SiidaTests extends ScalaTests with TestModule.Munit {
+    override def ivyDeps = T {
+      Agg(
+        ivy"org.scalameta::munit:${Versions.munit}",
+        ivy"org.typelevel::munit-cats-effect:${Versions.munitCatsEff}",
+      )
+    }
+  }
+}
+
+// Licence-header check (research R7, task T008). Reads the canonical
+// AGPL header from build/licence-headers/agpl.txt and an allowlist of
+// ported files from build/licence-headers/ported.json. Walks every
+// .scala / .sc file under modules/ and verifies the file starts with
+// the expected header (or is in the allowlist). Fails the build with
+// the offending paths on any violation.
+//
+// Returns the sorted list of checked files so the Mill task graph can
+// cache the result and skip re-running when nothing changed.
+object SiidaBuild extends Module {
+  def millSiidaHeaderCheck: T[Seq[String]] = T {
+    val workspace  = T.workspace
+    val headerFile = workspace / "build" / "licence-headers" / "agpl.txt"
+    val portedFile = workspace / "build" / "licence-headers" / "ported.json"
+
+    if (!os.exists(headerFile)) {
+      throw new RuntimeException(
+        s"licence-header check: $headerFile not found"
+      )
+    }
+
+    val expectedHeader = os.read(headerFile)
+    val expectedFirstLine = expectedHeader.linesIterator
+      .find(_.trim.nonEmpty)
+      .getOrElse {
+        throw new RuntimeException("licence-header check: agpl.txt is empty")
+      }
+
+    val portedAllowlist: Set[String] =
+      if (os.exists(portedFile)) {
+        val content = os.read(portedFile)
+        val filesBlock = """"files"\s*:\s*\[([^\]]*)\]""".r
+          .findFirstMatchIn(content)
+          .map(_.group(1))
+          .getOrElse("")
+        """"([^"]+)"""".r
+          .findAllMatchIn(filesBlock)
+          .map(_.group(1))
+          .toSet
+      } else Set.empty
+
+    val modulesDir = workspace / "modules"
+    val sourceFiles =
+      if (os.exists(modulesDir)) {
+        os.walk(modulesDir)
+          .filter(p => os.isFile(p) && (p.ext == "scala" || p.ext == "sc"))
+          .toList
+      } else List.empty
+
+    val violations = sourceFiles.flatMap { path =>
+      val rel = path.relativeTo(workspace).toString
+      if (portedAllowlist.contains(rel)) None
+      else {
+        val content = os.read(path)
+        if (content.startsWith(expectedFirstLine)) None
+        else Some(rel)
+      }
+    }
+
+    if (violations.nonEmpty) {
+      throw new RuntimeException(
+        s"licence-header check failed for ${violations.size} file(s):\n  " +
+          violations.mkString("\n  ")
+      )
+    }
+
+    T.log.info(
+      s"licence-header check passed (${sourceFiles.size} files inspected)"
+    )
+    sourceFiles.map(_.relativeTo(workspace).toString).sorted
+  }
+}
+
+// Module registry. Each numbered roadmap area gets one entry. Modules
+// are added by their corresponding tasks (T014 for core, T032 for the
+// other seven). Order here is roadmap-numeric for readability; Mill
+// does not care.
+object modules extends Module {
+  object core extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object crypto extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object mixnet extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object pkg extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object configchain extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object sdk extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object agent extends SiidaModule {
+    object test extends SiidaTests
+  }
+  object async extends SiidaModule {
+    object test extends SiidaTests
+  }
+}

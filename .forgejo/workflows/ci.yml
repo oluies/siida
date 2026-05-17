@@ -1,39 +1,50 @@
 name: CI
 
+# Mirror of .github/workflows/ci.yml for Codeberg's Forgejo Actions
+# runner. Kept in lockstep deliberately so a forced move between hosts
+# is a no-op. Step names and ordering MUST match the GitHub workflow;
+# scripts/check-ci-parity.sh enforces this at every push.
+
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
 
-# Mirror of .github/workflows/ci.yml for Codeberg's Forgejo Actions runner.
-# Kept in sync deliberately so a forced move between hosts is a no-op.
 jobs:
   build:
-    name: build / vet / test (Go ${{ matrix.go }})
+    name: build / test (JVM 21)
     runs-on: docker
     container:
-      image: code.forgejo.org/oci/node:22-bookworm
-    strategy:
-      fail-fast: false
-      matrix:
-        go: ["1.26"]
+      image: eclipse-temurin:21-jdk
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v5
+      - name: Setup JDK 21
+        # JDK already provided by eclipse-temurin:21-jdk container image;
+        # we keep the step (matching the GitHub workflow name) so the
+        # parity script sees the same ordered list of step names.
+        run: java -version
+
+      - name: Cache Mill out
+        uses: actions/cache@v4
         with:
-          go-version: ${{ matrix.go }}
-          cache: true
+          path: |
+            out
+            ~/.cache/mill
+          key: mill-forgejo-${{ hashFiles('.mill-version', 'build.mill') }}
+          restore-keys: |
+            mill-forgejo-
 
-      - name: go mod download
-        run: go mod download
+      - name: Check licence headers
+        run: make headers
 
-      - name: go build
-        run: go build ./...
+      - name: Compile all modules
+        run: make compile
 
-      - name: go vet
-        run: go vet ./...
+      - name: Test all modules
+        run: make test
 
-      - name: go test
-        run: go test -race -count=1 ./...
+      - name: Check CI parity
+        run: make ci-parity

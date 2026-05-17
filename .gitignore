@@ -1,4 +1,11 @@
-# Go build artefacts
+# Mill build artefacts
+/out/
+/.mill-bsp/
+/.bloop/
+/.metals/
+/.bsp/
+
+# Legacy Go build artefacts (kept for now; see go.mod deprecation note in README)
 /bin/
 /dist/
 *.exe
@@ -6,7 +13,7 @@
 *.out
 *.prof
 
-# Module download cache
+# Module download cache (Go vendor; not used by JVM build)
 /vendor/
 
 # Editor / OS noise

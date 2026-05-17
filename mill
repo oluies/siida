@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+# Siida Mill launcher — minimal, self-contained.
+#
+# Reads .mill-version from the repository root and downloads the matching
+# Mill assembly JAR into a local cache. No global Mill installation is
+# required; the only host prerequisite is a JDK 21 LTS.
+#
+# This is a hand-rolled minimal launcher (research R4 / task T002). It
+# implements just enough of the upstream Mill bootstrap protocol for the
+# bootstrap feature to work. To upgrade later, replace this script with
+# the upstream millw or the canonical Mill launcher from
+# https://github.com/com-lihaoyi/mill (both MIT-licensed).
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
+MILL_VERSION_FILE="${REPO_ROOT}/.mill-version"
+
+if [[ ! -f "${MILL_VERSION_FILE}" ]]; then
+  echo "error: .mill-version not found at ${MILL_VERSION_FILE}" >&2
+  exit 1
+fi
+
+MILL_VERSION="$(tr -d '[:space:]' < "${MILL_VERSION_FILE}")"
+
+if [[ -z "${MILL_VERSION}" ]]; then
+  echo "error: .mill-version is empty" >&2
+  exit 1
+fi
+
+CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/mill/download"
+# Mill release artefacts are self-executable shell+jar assemblies, not
+# plain JARs — they have a small POSIX-shell prefix that picks the right
+# `java` invocation. Don't rename to .jar; don't run with `java -jar`.
+MILL_BIN="${CACHE_DIR}/${MILL_VERSION}/mill-${MILL_VERSION}"
+MILL_URL="https://github.com/com-lihaoyi/mill/releases/download/${MILL_VERSION}/${MILL_VERSION}-assembly"
+
+if [[ ! -f "${MILL_BIN}" ]]; then
+  mkdir -p "$(dirname "${MILL_BIN}")"
+  echo "[mill] downloading Mill ${MILL_VERSION} ..." >&2
+  if command -v curl >/dev/null 2>&1; then
+    curl -fL --retry 3 -o "${MILL_BIN}.tmp" "${MILL_URL}"
+  elif command -v wget >/dev/null 2>&1; then
+    wget -O "${MILL_BIN}.tmp" "${MILL_URL}"
+  else
+    echo "error: need curl or wget to download Mill" >&2
+    exit 1
+  fi
+  chmod +x "${MILL_BIN}.tmp"
+  mv "${MILL_BIN}.tmp" "${MILL_BIN}"
+fi
+
+if [[ -n "${JAVA_HOME:-}" && -x "${JAVA_HOME}/bin/java" ]]; then
+  JAVA_BIN="${JAVA_HOME}/bin/java"
+elif command -v java >/dev/null 2>&1; then
+  JAVA_BIN="$(command -v java)"
+else
+  echo "error: java is required (need JDK 21 LTS); install Temurin 21 or equivalent" >&2
+  echo "       e.g.  brew install --cask temurin@21 && export JAVA_HOME=\$(/usr/libexec/java_home -v 21)" >&2
+  exit 1
+fi
+
+JAVA_MAJOR="$("${JAVA_BIN}" -version 2>&1 | awk -F\" '/version/ {print $2}' | cut -d. -f1)"
+if [[ "${JAVA_MAJOR:-0}" != "21" ]]; then
+  echo "error: ${JAVA_BIN} reports JDK ${JAVA_MAJOR}, but the constitution pins JDK 21 LTS" >&2
+  echo "       install JDK 21 and either set JAVA_HOME or put 'java' (21) first on \$PATH" >&2
+  echo "       e.g.  brew install --cask temurin@21 && export JAVA_HOME=\$(/usr/libexec/java_home -v 21)" >&2
+  exit 1
+fi
+
+export JAVA_HOME="$(dirname "$(dirname "${JAVA_BIN}")")"
+exec "${MILL_BIN}" "$@"

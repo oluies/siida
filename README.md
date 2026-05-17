@@ -74,8 +74,8 @@ through `/speckit-constitution`:
 │  Pairing crypto            │ gnark-crypto via JNI, OR pure-Scala     │
 │  (IBE / BLS for PKG)       │ bn254 — decided in feature 002          │
 ├─────────────────────────────────────────────────────────────────────┤
-│  Build / lang              │ Scala 3 + Mill or sbt + Apache 2.0      │
-│                            │ Pekko + Cats Effect 3 + http4s          │
+│  Build / lang              │ Scala 3 + Mill + Apache 2.0 Pekko +     │
+│                            │ Cats Effect 3 + http4s                  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -96,16 +96,41 @@ commands to produce them.
 | 002 | `crypto-pairing` | Replace Alpenhorn's dclxvi `bn256` with a portable BN254 path (JNI to gnark-crypto vs. pure-Scala BN254). Port `ibe` and `bls`. |
 | 003 | `mixnet-server` | Coordinator, mixer, shuffle, onionbox on Pekko Streams. Round-based deterministic batch processing with explicit timing. |
 | 004 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
-| 005 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
-| 006 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
-| 007 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
+| 005 | `config-chain-governance` | PKG operations and signed config-chain governance: the social-trust hinge that controls who is in the mixer/PKG set and how that membership rotates. Split from 004 so it has its own threat-model treatment. |
+| 006 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
+| 007 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
+| 008 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
 
-Past `007` likely lives a `008-chat-client` (replacing Vuvuzela's terminal
-`gocui` UI) and an `009-observability` (OpenTelemetry, ops dashboards).
+Past `008` likely lives a `009-chat-client` (replacing Vuvuzela's terminal
+`gocui` UI) and an `010-observability` (OpenTelemetry, ops dashboards).
+
+## Build
+
+Siida is **JVM-only** as of constitution v1.0.0. The canonical bootstrap
+on a clean machine is:
+
+```sh
+make check        # headers + compile + test + ci-parity (same as CI)
+```
+
+The Makefile wraps `./mill`, which reads `.mill-version` and self-fetches
+the pinned Mill release into a project-local cache; no global Mill or
+Scala install is required. `make help` lists individual targets. The only host prerequisite is **JDK 21 LTS**
+(Temurin recommended). See [`specs/001-project-bootstrap/quickstart.md`](specs/001-project-bootstrap/quickstart.md)
+for the full developer entry point.
+
+> **Note on `go.mod`**: the file at the repository root is a historical
+> artefact from an early Go exploration and is **retained for git-history
+> continuity only**. Do not attempt to build Siida with the Go toolchain;
+> the constitution mandates the JVM-native stack (Scala 3 + Apache Pekko
+> + Cats Effect 3, built by Mill). Neither CI pipeline invokes any Go
+> command, and `scripts/check-ci-parity.sh` enforces this on every push.
 
 ## Status
 
-**Pre-alpha.** Bootstrap scaffold in place; awaiting constitution.
+**Pre-alpha.** Bootstrap scaffold in place; constitution v1.0.0 ratified
+on 2026-05-16; feature 001-project-bootstrap landing the Mill build is
+in flight.
 
 ## Lineage and licence
 
