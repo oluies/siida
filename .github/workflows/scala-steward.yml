@@ -42,18 +42,15 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Mill on PATH (use project launcher)
-        # Scala Steward's Mill integration invokes `mill` directly to query
-        # the build. Use the project's own ./mill launcher copied onto
-        # PATH so the version always matches .mill-version exactly. Mill
-        # 0.11 doesn't recognise build.mill (Mill 0.12+ filename), so
-        # generic Coursier installs picked the wrong line.
-        run: |
-          sudo install -m 0755 mill /usr/local/bin/mill
-
       - name: Run Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
         with:
+          # Pin to the project's .mill-version so Steward queries the
+          # build under the same Mill our launcher uses. The action
+          # installs Mill itself when it sees JDK 21 on PATH (set up
+          # above); without this input it defaults to 1.0.x which
+          # diverges from the project pin.
+          mill-version: 0.12.5
           # STEWARD_TOKEN is a fine-grained PAT (contents: write +
           # pull-requests: write) that triggers downstream CI on
           # bot PRs. If absent, the default GITHUB_TOKEN is used and
