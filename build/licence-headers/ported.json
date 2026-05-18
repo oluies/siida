@@ -1,0 +1,4 @@
+{
+  "_schema_note": "Allowlist of source files whose original upstream licence header is preserved instead of the AGPL header. Use repo-relative paths. Add a 'reason' alongside each entry so the rationale travels with the file.",
+  "files": []
+}
