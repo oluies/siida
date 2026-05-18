@@ -6,7 +6,7 @@ delivered to a recipient who is offline when the sender posts it,
 without leaking the recipient identity through the storage substrate.
 
 This module is a **placeholder** until spec
-[`008-async-delivery-over-mixnet`](../../specs/008-async-delivery-over-mixnet/spec.md)
+[`009-async-delivery-over-mixnet`](../../specs/009-async-delivery-over-mixnet/spec.md)
 lands. That spec decides the bundle-store substrate (NATS JetStream
 vs. dtn7-rs) and the convergence-layer adapter.
 

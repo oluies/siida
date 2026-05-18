@@ -1,13 +1,23 @@
 # modules/crypto
 
-Pairing-based cryptography and primitives used by Siida's PKG and
-mixnet layers (Identity-Based Encryption, BLS signatures, BN-254 curve
-operations).
+Pairing-based cryptography for Siida's PKG, mixnet, and config-chain
+layers. Provides Identity-Based Encryption (Boneh-Franklin IBE),
+BLS signatures with aggregation and proofs-of-possession, and the
+underlying BN254 pairing primitives.
 
-This module is a **placeholder** until spec
-[`002-crypto-pairing`](../../specs/002-crypto-pairing/spec.md) lands.
-That spec decides between gnark-crypto-over-JNI and a pure-Scala BN254
-implementation, and ports the `ibe` and `bls` packages from the
-Vuvuzela `crypto` repository.
+This module is being filled by spec
+[`002-crypto-pairing`](../../specs/002-crypto-pairing/spec.md);
+the public Scala API surface that downstream modules can lock onto
+is documented at
+[`specs/002-crypto-pairing/contracts/scala-api.md`](../../specs/002-crypto-pairing/contracts/scala-api.md).
+See [`quickstart.md`](../../specs/002-crypto-pairing/quickstart.md)
+for usage examples.
 
-Do not edit the `Placeholder` here in unrelated PRs.
+**Implementation strategy** (resolved in
+[`specs/002-crypto-pairing/research.md`](../../specs/002-crypto-pairing/research.md)
+R1): gnark-crypto reached over a thin JNI shim, with pre-built
+per-architecture native binaries shipped under `native/<triple>/`.
+JVM-side bindings use JNA (Apache-2.0).
+
+**Do not edit** the placeholder `Placeholder` here once the spec
+lands; the module will be populated by 002's implementation tasks.

@@ -46,11 +46,21 @@ if [[ "${GH_NAMES}" != "${FJ_NAMES}" ]]; then
   exit 1
 fi
 
-# Forbid Go-toolchain commands anywhere in either workflow (FR-012, US3).
-GO_PATTERN='(\bgo[[:space:]]+(build|test|vet|mod|run)\b|actions/setup-go|setup-go@)'
+# Forbid LEGACY Go-toolchain commands (`go build ./...`, `go test ./...`,
+# etc.) running directly against the repo root. Spec 001 FR-012 introduced
+# this to keep the deprecated Go scaffolding from being invoked.
+#
+# Spec 002 introduces a *deliberate* cgo build path under
+# modules/crypto/native/ that produces the BN254 native shim. That path
+# uses Go legitimately via `actions/setup-go`, `apt-get install golang-go`,
+# and `go build -buildmode=c-shared` inside modules/crypto/native/build.sh.
+# We allow those uses by anchoring the regex on `go` preceded by whitespace
+# or start-of-line, so it doesn't match the `go` inside `setup-go`,
+# `golang-go`, `gnark-crypto`, etc.
+GO_PATTERN='([[:space:]]|^)go[[:space:]]+(build|test|vet|mod|run)\b'
 if grep -E "${GO_PATTERN}" "${GITHUB_WF}" "${FORGEJO_WF}"; then
-  echo "error: Go-toolchain commands detected in CI workflows (FR-012)" >&2
+  echo "error: Legacy Go-toolchain commands detected in CI workflows (002 amends 001 FR-012 to allow cgo native build only)" >&2
   exit 1
 fi
 
-echo "[ci-parity] OK — both workflows define the same step sequence (${GH_NAMES//$'\n'/ ; }); no Go toolchain invocations."
+echo "[ci-parity] OK — both workflows define the same step sequence (${GH_NAMES//$'\n'/ ; }); no LEGACY Go-toolchain commands (cgo native-shim build is permitted)."

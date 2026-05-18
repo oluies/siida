@@ -6,7 +6,7 @@ the lookups that bootstrap private communication between users who do
 not yet share a key.
 
 This module is a **placeholder** until spec
-[`004-pkg-keybootstrap`](../../specs/004-pkg-keybootstrap/spec.md)
+[`005-pkg-keybootstrap`](../../specs/005-pkg-keybootstrap/spec.md)
 lands. That spec ports the Alpenhorn key-generator and friend-
 discovery code into the JVM-native build.
 
