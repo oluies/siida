@@ -42,15 +42,14 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Mill on PATH
+      - name: Install Mill on PATH (use project launcher)
         # Scala Steward's Mill integration invokes `mill` directly to query
-        # the build. The runner doesn't ship Mill, so install it via
-        # Coursier. We don't pin to .mill-version here; Steward only uses
-        # Mill for dependency resolution, and recent Mill versions are
-        # API-stable for that path.
-        uses: coursier/setup-action@v1
-        with:
-          apps: mill
+        # the build. Use the project's own ./mill launcher copied onto
+        # PATH so the version always matches .mill-version exactly. Mill
+        # 0.11 doesn't recognise build.mill (Mill 0.12+ filename), so
+        # generic Coursier installs picked the wrong line.
+        run: |
+          sudo install -m 0755 mill /usr/local/bin/mill
 
       - name: Run Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
