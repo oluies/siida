@@ -27,6 +27,17 @@ jobs:
         # parity script sees the same ordered list of step names.
         run: java -version
 
+      - name: Setup Go
+        # The eclipse-temurin container doesn't ship Go; install Go +
+        # gcc (cgo needs gcc) via apt before the native build step. We
+        # don't use actions/setup-go here because the Forgejo runner's
+        # action availability differs from GitHub's and apt-pinning Go
+        # is more deterministic for our use case anyway.
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends golang-go gcc libc6-dev
+          go version
+
       - name: Cache Mill out
         uses: actions/cache@v4
         with:
@@ -39,6 +50,9 @@ jobs:
 
       - name: Check licence headers
         run: make headers
+
+      - name: Build native shim (host arch)
+        run: bash modules/crypto/native/build.sh
 
       - name: Compile all modules
         run: make compile
