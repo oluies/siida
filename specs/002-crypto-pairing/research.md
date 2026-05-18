@@ -59,7 +59,7 @@ practical reality:
 4. *Speed of delivery* (the constitution does not state this
    constraint explicitly but the project is pre-alpha and the
    roadmap has eight more features after 002). Pure-Scala BN254
-   would push 003 (mixnet) back by months. JNI to a known-good
+   would push 004 (mixnet) back by months. JNI to a known-good
    primitive lets us move now.
 
 **Alternatives considered and why rejected**:
@@ -263,7 +263,7 @@ implement and require proofs of possession at the API level; PoP is
 just `BLS.sign(sk, pk_bytes)` with a domain-separated tag.
 
 **Rationale**: Matches upstream Vuvuzela. PoP is the cleanest
-rogue-key defence for the config-chain use case (005). The pubkey-in-G1,
+rogue-key defence for the config-chain use case (006). The pubkey-in-G1,
 sig-in-G2 layout matches the Vuvuzela wire format.
 
 **Alternatives considered**:
@@ -411,7 +411,7 @@ new optional task. Minimal change to 001's build skeleton.
 
 ## R12. Open questions deferred to later specs
 
-- **Constant-time guarantees for the wider Scala mixnet code** (003).
+- **Constant-time guarantees for the wider Scala mixnet code** (004).
   This spec covers crypto only; round-handling code in the mixnet
   may itself touch secrets.
 - **Hardware-acceleration paths** (AVX-512, ARM SVE) — gnark-crypto

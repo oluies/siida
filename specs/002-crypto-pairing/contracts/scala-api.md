@@ -2,8 +2,8 @@
 
 **Feature**: [spec.md](../spec.md)
 
-This is the contract downstream modules (`pkg` for 004, `configchain`
-for 005, `sdk` for 006, `agent` for 007) will lock onto per FR-010.
+This is the contract downstream modules (`pkg` for 005, `configchain`
+for 006, `sdk` for 007, `agent` for 008) will lock onto per FR-010.
 Post-002 changes to any signature in this file require an explicit
 spec amendment.
 

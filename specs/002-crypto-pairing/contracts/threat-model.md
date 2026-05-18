@@ -4,7 +4,7 @@
 
 This is not a re-derivation of the project-level threat model; it's
 the *crypto-module-specific* commitments and known non-goals, written
-to give the PKG (004), config-chain (005), and SDK (006) specs a
+to give the PKG (005), config-chain (006), and SDK (007) specs a
 single place to point when describing what they inherit.
 
 ## Adversary model in scope

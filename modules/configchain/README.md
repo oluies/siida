@@ -6,8 +6,8 @@ rotates, and how clients verify config updates without a single point
 of authority.
 
 This module is a **placeholder** until spec
-[`005-config-chain-governance`](../../specs/005-config-chain-governance/spec.md)
+[`006-config-chain-governance`](../../specs/006-config-chain-governance/spec.md)
 lands. The config chain has its own threat-model treatment separate
-from PKG key issuance ([004](../../specs/004-pkg-keybootstrap/spec.md)).
+from PKG key issuance ([005](../../specs/005-pkg-keybootstrap/spec.md)).
 
 Do not edit the `Placeholder` here in unrelated PRs.

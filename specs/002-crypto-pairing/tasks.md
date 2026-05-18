@@ -98,7 +98,7 @@ the expected byte buffer.
 - [ ] T024 [US1] Write `modules/crypto/src/siida/crypto/api/IBE.scala`: opaque types (`MasterKey`, `MasterPublicKey`, `IdentityKey`, `Ciphertext`) and the `IBE` object with all signatures per `contracts/scala-api.md` (generateMasterKey, publicKey, issueKey, encrypt, decrypt, plus all 8 serialise/deserialise pairs); uses `Bn254Ops` (T015), `HashToCurve.forIBE` (T016), `Kdf` (T017); returns typed `Either[IBEError, T]` for every operation that can fail with expected error conditions; AGPL header
 - [ ] T025 [US1] Run `./mill modules.crypto.test` and verify both `HashToCurveSuite` and `IBESuite` pass on the current arch; fix any test failures in IBE.scala (NOT in the vectors — the vectors are the oracle); update `ibe_vectors.json` only if a deterministic regeneration shows the previous bytes were generated with a different seed
 
-**Checkpoint**: IBE works end-to-end on the current arch with KAT-pinned outputs. PKG (004), SDK (006), and configchain (005) can begin design work against the locked IBE API.
+**Checkpoint**: IBE works end-to-end on the current arch with KAT-pinned outputs. PKG (005), SDK (007), and configchain (006) can begin design work against the locked IBE API.
 
 ---
 
@@ -118,7 +118,7 @@ the expected byte buffer.
 - [ ] T028 [US2] Write `modules/crypto/src/siida/crypto/api/BLS.scala`: opaque types (`BLSPrivateKey`, `BLSPublicKey`, `BLSSignature`, `ProofOfPossession`) and the `BLS` object with all signatures per `contracts/scala-api.md` (generateKeyPair, publicKey, sign, verify, aggregate, verifyAggregate, verifyAggregateDistinct, proofOfPossession, verifyPoP, plus 4 serialise/deserialise pairs); uses `Bn254Ops` (T015) and `HashToCurve.forBLS` / `.forPoP` (T016); typed `Either[BLSError, T]` returns; AGPL header
 - [ ] T029 [US2] Run `./mill modules.crypto.test --testOnly siida.crypto.BLSSuite` and verify all five tests pass; verify that rogue-key attempt (aggregate-verify without PoPs) is impossible at the API level (the call requires `pops: Seq[ProofOfPossession]`, so it's not even expressible without them)
 
-**Checkpoint**: BLS works end-to-end. configchain (005) can begin design work against the locked BLS API.
+**Checkpoint**: BLS works end-to-end. configchain (006) can begin design work against the locked BLS API.
 
 ---
 
@@ -225,7 +225,7 @@ Task: "Write internal/Kdf.scala"
 2. Complete Phase 2 (Foundational) — native shim builds locally; FFI smoke test green
 3. Complete Phase 3 (US1, IBE) — IBE works with KAT-pinned outputs
 4. **STOP and VALIDATE**: `./mill modules.crypto.test --testOnly siida.crypto.IBESuite` green on local arch; manually verify the same Suite would pass on a different arch (deferred to CI after the matrix job runs).
-5. Tag / demo: the PKG (004) and SDK (006) specs can begin design work against the locked IBE API. BLS and the public BN254 API can land in follow-on PRs.
+5. Tag / demo: the PKG (005) and SDK (007) specs can begin design work against the locked IBE API. BLS and the public BN254 API can land in follow-on PRs.
 
 ### Incremental Delivery
 

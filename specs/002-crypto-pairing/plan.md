@@ -133,7 +133,7 @@ The `NOTICE` file is amended to credit `consensys/gnark-crypto`
 **Pass.** Test vectors from external sources (`research.md` R8) are
 written and committed BEFORE the implementing code is written;
 contributors verifying the IBE / BLS / BN254 paths will fail-then-pass
-each suite. There are no rounds in 002 (rounds are 003 territory),
+each suite. There are no rounds in 002 (rounds are 004 territory),
 but the cross-architecture-determinism requirement (FR-004, SC-002)
 is the moral equivalent: a single committed byte-output is the
 oracle, fixed-seed RNG eliminates non-determinism, and the test

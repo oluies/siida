@@ -12,7 +12,7 @@
 
 ### User Story 1 - IBE round-trip works on the new pairing primitive (Priority: P1)
 
-A downstream module — initially the PKG (004) and the client SDK (006),
+A downstream module — initially the PKG (005) and the client SDK (007),
 ultimately every component that talks to the PKG-bootstrapped key system
 — needs to encrypt a message to an identity string (e.g., a username or
 a config-chain epoch ID) and have the recipient decrypt it using a key
@@ -23,8 +23,8 @@ architecture.
 
 **Why this priority**: IBE is the single most load-bearing primitive in
 the Alpenhorn/Vuvuzela design. Until it works correctly on BN254,
-neither the PKG (004) nor the client SDK (006) nor the config-chain
-governance (005) can be built; every downstream spec from 003 onward
+neither the PKG (005) nor the client SDK (007) nor the config-chain
+governance (006) can be built; every downstream spec from 004 onward
 depends on this primitive being present and correct.
 
 **Independent Test**: A test fixture (a) sets up a master key pair,
@@ -57,13 +57,13 @@ match.
 ### User Story 2 - BLS sign / verify / aggregate works on the new pairing primitive (Priority: P2)
 
 Components that need authenticated, public-verifiable signatures — the
-config-chain (005), mixer attestations (003), and any future
-agent-identity proofs (007) — need BLS sign, verify, and signature
+config-chain (006), mixer attestations (004), and any future
+agent-identity proofs (008) — need BLS sign, verify, and signature
 aggregation. The crypto module provides these on BN254 with the same
 portability guarantees as IBE.
 
 **Why this priority**: BLS unblocks the config-chain governance layer
-(005). Without it, the PKG (004) can issue keys but the set of trusted
+(006). Without it, the PKG (005) can issue keys but the set of trusted
 PKGs and mixers can't be rotated under an auditable trust chain. P2
 because IBE (US1) is strictly more load-bearing — a system with IBE
 and no BLS can still bootstrap a single trusted PKG; the inverse is
@@ -96,7 +96,7 @@ runs deterministically across Linux/amd64 and macOS/arm64.
 
 ### User Story 3 - BN254 primitives are an internal API future modules can build on (Priority: P3)
 
-A future feature (005 config-chain proofs, 007 agent identity, possibly
+A future feature (006 config-chain proofs, 008 agent identity, possibly
 009 observability for cryptographic-event metrics) needs lower-level
 access to the pairing primitive — scalar arithmetic, G1/G2 point
 addition and scalar multiplication, pairing evaluation, hash-to-curve
@@ -210,7 +210,7 @@ the result.
   with the reasons for rejection, so a future feature can revisit
   the decision without re-deriving the trade-offs.
 - **FR-010**: The crypto module's public API MUST be stable enough
-  for downstream specs (003 mixnet, 004 PKG, 005 config-chain, 006
+  for downstream specs (004 mixnet, 005 PKG, 006 config-chain, 007
   SDK) to depend on it without expecting renames or signature changes
   during their own implementation; any post-002 API change is a
   spec-level event requiring its own `plan.md` Complexity Tracking
@@ -237,7 +237,7 @@ the result.
 - **SC-003**: A new contributor adding a downstream module that
   consumes the crypto API can do so without modifying the crypto
   module itself — measured by the absence of cross-module commits
-  in 003-008 that touch `modules/crypto/`.
+  in 004-009 that touch `modules/crypto/`.
 - **SC-004**: A pairing operation on BN254 completes in under 50ms
   on a typical developer laptop; an IBE encrypt completes in under
   100ms; a BLS sign completes in under 50ms. (These are sanity
@@ -285,5 +285,5 @@ the result.
   the AGPL path instead and `ported.json` is not used for it.
 - Performance bounds in SC-004 are sanity upper bounds, not the
   ultimate targets. Real round-budget timing is set by the mixnet
-  spec (003); the crypto spec just ensures the primitives aren't
+  spec (004); the crypto spec just ensures the primitives aren't
   catastrophically slow.

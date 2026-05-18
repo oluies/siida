@@ -2,8 +2,8 @@
 
 **Feature**: [spec.md](./spec.md) · **Plan**: [plan.md](./plan.md)
 
-This quickstart shows how a downstream-spec contributor (PKG 004,
-configchain 005, SDK 006, agent 007) uses the crypto module. It is
+This quickstart shows how a downstream-spec contributor (PKG 005,
+configchain 006, SDK 007, agent 008) uses the crypto module. It is
 also the validation contract for the spec's success criteria.
 
 ## Prerequisites
@@ -65,7 +65,7 @@ val wrong = IBE.decrypt(bobKey, ct)
 ```
 
 Wire-format work (sending the ciphertext to the recipient over the
-mixnet) is the SDK's job (006). The crypto module just provides
+mixnet) is the SDK's job (007). The crypto module just provides
 `serialiseCiphertext` / `deserialiseCiphertext` for that.
 
 ## Using BLS from a downstream module
@@ -98,7 +98,7 @@ val agg: BLSSignature = BLS.aggregate(Seq(sig1, sig2)).toOption.get
 assert(BLS.verifyAggregate(Seq(pk1, pk2), Seq(pop1, pop2), msg, agg))
 ```
 
-The config-chain spec (005) will use this pattern for multi-signer
+The config-chain spec (006) will use this pattern for multi-signer
 attestations of config updates.
 
 ## What "success" looks like

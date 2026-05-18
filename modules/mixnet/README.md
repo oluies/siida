@@ -5,7 +5,7 @@ round-driven batch processing that gives Siida its metadata-privacy
 guarantee.
 
 This module is a **placeholder** until spec
-[`003-mixnet-server`](../../specs/003-mixnet-server/spec.md) lands.
+[`004-mixnet-server`](../../specs/004-mixnet-server/spec.md) lands.
 That spec brings up coordinator + mixer on Pekko Streams with
 deterministic round timing (Constitution Principle IV).
 

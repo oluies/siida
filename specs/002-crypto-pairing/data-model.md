@@ -17,7 +17,7 @@ Holds both the master secret (PKG-only) and the master public key
 (distributable). Created by `IBE.generateMasterKey`.
 
 - `secret: Scalar` — random `s ∈ Z_r`. NEVER serialised to disk by
-  the crypto module; the PKG (004) owns persistence.
+  the crypto module; the PKG (005) owns persistence.
 - `public: G1Point` — `g1 ^ secret`. Distributed widely.
 - Validation: `secret` MUST be in `[1, r-1]`; the zero scalar is
   rejected.
@@ -152,14 +152,14 @@ BLSPrivateKey ─┐
 
 None of these entities have state in the conventional sense; they are
 immutable values. The only "lifecycle" worth naming is the IBE
-master-key lifecycle, which is **fully owned by the PKG (004)**:
+master-key lifecycle, which is **fully owned by the PKG (005)**:
 
 ```
 [no master key]
       │ generateMasterKey
       ▼
 [active]                      ← issueKey(...) callable any number of times
-      │ (PKG rotation; spec 005)
+      │ (PKG rotation; spec 006)
       ▼
 [retired]                     ← issueKey(...) MUST refuse; outstanding
                                 IdentityKey instances still decrypt
@@ -167,7 +167,7 @@ master-key lifecycle, which is **fully owned by the PKG (004)**:
 ```
 
 The crypto module exposes the primitives; the *state machine* lives
-in the PKG (004) and the config-chain (005). Documenting it here so
+in the PKG (005) and the config-chain (006). Documenting it here so
 those specs have an unambiguous handoff.
 
 ## Validation summary (consolidated)
