@@ -5,7 +5,6 @@ name: Scala Steward
 # Pinning constraints live in .scala-steward.conf at the repository
 # root so they travel with the code.
 #
-# Cadence: weekly (Monday 00:00 UTC) plus manual workflow_dispatch.
 # Runs on GitHub Actions only — the Forgejo mirror is excluded by
 # living under .github/ rather than .forgejo/, and the per-PR CI
 # parity script ignores this file (it reads only the ci.yml workflow
@@ -14,11 +13,20 @@ name: Scala Steward
 # Per maintainer instruction (spec 003-dependency-automation):
 # the Go module under modules/crypto/native/ is OUT OF SCOPE for
 # automation. Scala Steward only sees JVM dependencies.
+#
+# DEFERRED: the weekly cron is disabled until the
+# scala-steward-action's Mill installer (Coursier-backed) gains a
+# path to install Mill 0.12.5 — the version pinned in .mill-version.
+# As of 2026-05-18 it returns HTTP 404 for 0.12.5 ("Unable to install
+# Mill"), Mill 0.11.x is too old to read build.mill, and the action
+# defaults to Mill 1.0.x which we haven't tested against our build.
+# Manual workflow_dispatch is retained for ad-hoc validation runs.
+# See PRs #4, #5, #6 for the iteration history.
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 1'
+  # schedule:
+  #   - cron: '0 0 * * 1'  # see DEFERRED note above
 
 permissions:
   contents: read
