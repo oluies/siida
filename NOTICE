@@ -32,5 +32,22 @@ file scope:
     Portions Copyright 2016 The Alpenhorn Authors
     Distributed under a BSD-3-clause licence
 
-When the bn256-to-bn254 migration completes, this notice will be amended to
-credit the consensys/gnark-crypto project (Apache-2.0).
+------------------------------------------------------------------------------
+
+Third-party dependencies (introduced in spec 002-crypto-pairing):
+
+    gnark-crypto (BN254 pairing primitives, reached over a JNI shim)
+    Copyright (c) 2020 ConsenSys Software Inc.
+    https://github.com/Consensys/gnark-crypto
+    Licensed under the Apache Licence, Version 2.0
+
+    Java Native Access (JNA, JVM foreign-function interface)
+    Copyright (c) Timothy Wall and contributors
+    https://github.com/java-native-access/jna
+    Dual-licensed under the Apache Licence 2.0 and LGPL 2.1+;
+    Siida uses JNA under the Apache Licence 2.0.
+
+Native binaries shipped under modules/crypto/native/<triple>/ are
+produced from gnark-crypto sources via cgo -buildmode=c-shared by the
+Siida project's CI matrix; the binaries are distributed under the
+AGPL-3.0-or-later umbrella along with the rest of this program.

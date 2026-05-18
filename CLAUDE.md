@@ -1,9 +1,15 @@
 <!-- SPECKIT START -->
-Active feature: 003-dependency-automation.
-Plan: specs/003-dependency-automation/plan.md
-Spec: specs/003-dependency-automation/spec.md
-Tasks: specs/003-dependency-automation/tasks.md
-Tooling-only spec: adds a weekly Scala Steward workflow plus pins.
-The Go side of the build is intentionally excluded.
-Predecessor spec docs still apply (001 build / 002 crypto).
+Active feature: 002-crypto-pairing.
+Plan: specs/002-crypto-pairing/plan.md
+Spec: specs/002-crypto-pairing/spec.md
+Research: specs/002-crypto-pairing/research.md
+Data model: specs/002-crypto-pairing/data-model.md
+Contracts: specs/002-crypto-pairing/contracts/
+Quickstart: specs/002-crypto-pairing/quickstart.md
+Read the plan first for technology stack, project structure, shell
+commands, and constitution-check decisions for this feature. The
+JNI-vs-pure-Scala decision is resolved in research.md R1.
+Predecessor (001-project-bootstrap) plan still applies for build /
+CI / licence-header conventions. 003-dependency-automation (Scala
+Steward) is merged and runs weekly; nothing to action here.
 <!-- SPECKIT END -->

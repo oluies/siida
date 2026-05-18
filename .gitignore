@@ -5,6 +5,13 @@
 /.metals/
 /.bsp/
 
+# Native shim intermediates (per-arch libsiida_bn254.{so,dylib} ARE tracked
+# under modules/crypto/native/<triple>/; cgo intermediates are not)
+modules/crypto/native/*.o
+modules/crypto/native/*.h
+modules/crypto/native/_build/
+modules/crypto/native/main
+
 # Legacy Go build artefacts (kept for now; see go.mod deprecation note in README)
 /bin/
 /dist/

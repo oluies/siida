@@ -158,6 +158,22 @@ object modules extends Module {
     object test extends SiidaTests
   }
   object crypto extends SiidaModule {
+    // Per-spec 002-crypto-pairing: add JNA for the FFI to the native
+    // BN254 shim under modules/crypto/native/<triple>/.
+    override def ivyDeps = T {
+      super.ivyDeps() ++ Agg(
+        ivy"net.java.dev.jna:jna:5.14.0",
+      )
+    }
+
+    // Package the per-arch native binaries into the JAR so the
+    // NativeLoader can extract and System.load() them at JVM startup.
+    // The native/ subdirectory also contains Go/C source files; they
+    // get bundled too (~few KB) but are not loaded.
+    override def resources = T.sources {
+      super.resources() ++ Seq(PathRef(millSourcePath / "native"))
+    }
+
     object test extends SiidaTests
   }
   object mixnet extends SiidaModule {

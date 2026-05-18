@@ -1,0 +1,124 @@
+name: Native build (BN254 shim)
+
+# Rebuilds modules/crypto/native/<triple>/libsiida_bn254.{so,dylib}
+# across the four supported target triples. Triggered manually
+# (workflow_dispatch) or on changes to the shim source. The aggregate
+# job opens a PR with the regenerated binaries; humans review the
+# binary diffs (small) and merge.
+#
+# This workflow is SEPARATE from .github/workflows/ci.yml (the
+# per-PR build gate that runs make check). The parity check in
+# scripts/check-ci-parity.sh ignores it because it reads only the two
+# ci.yml workflow files by exact path.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'modules/crypto/native/main.go'
+      - 'modules/crypto/native/go.mod'
+      - 'modules/crypto/native/go.sum'
+      - 'modules/crypto/native/build.sh'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    name: build / ${{ matrix.triple }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - triple: linux-amd64
+            runner: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            ext: so
+          - triple: linux-arm64
+            runner: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+            ext: so
+          - triple: darwin-amd64
+            runner: macos-13
+            goos: darwin
+            goarch: amd64
+            ext: dylib
+          - triple: darwin-arm64
+            runner: macos-14
+            goos: darwin
+            goarch: arm64
+            ext: dylib
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: modules/crypto/native/go.mod
+          cache: true
+          cache-dependency-path: modules/crypto/native/go.sum
+
+      - name: Build native shim
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: bash modules/crypto/native/build.sh
+
+      - name: Upload artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libsiida_bn254-${{ matrix.triple }}
+          path: modules/crypto/native/${{ matrix.triple }}/libsiida_bn254.${{ matrix.ext }}
+          if-no-files-found: error
+          retention-days: 7
+
+  aggregate:
+    name: open PR with regenerated binaries
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: _native-build-artefacts
+
+      - name: Place artefacts under modules/crypto/native/<triple>/
+        run: |
+          set -euo pipefail
+          for arch in linux-amd64 linux-arm64; do
+            mkdir -p "modules/crypto/native/${arch}"
+            cp "_native-build-artefacts/libsiida_bn254-${arch}/libsiida_bn254.so" \
+               "modules/crypto/native/${arch}/libsiida_bn254.so"
+          done
+          for arch in darwin-amd64 darwin-arm64; do
+            mkdir -p "modules/crypto/native/${arch}"
+            cp "_native-build-artefacts/libsiida_bn254-${arch}/libsiida_bn254.dylib" \
+               "modules/crypto/native/${arch}/libsiida_bn254.dylib"
+          done
+          rm -rf _native-build-artefacts
+
+      - name: Open PR with the regenerated binaries
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: native-build/refresh-${{ github.run_id }}
+          title: 'native: refresh BN254 shim binaries (4 arches)'
+          body: |
+            Automated refresh of the four `modules/crypto/native/<triple>/libsiida_bn254.{so,dylib}` binaries via the `native-build` matrix workflow.
+
+            **What to review**:
+            - The diff is binary; visually inspect that each subdirectory contains a fresh file of plausible size (~3 MB).
+            - Confirm `modules/crypto/native/main.go`, `go.mod`, `go.sum`, and `build.sh` are at the commit you expect.
+            - After merging, run `make test` (or specifically `./mill modules.crypto.test`) to confirm the new binaries still pass the FFI smoke + KAT suites.
+
+            Triggered by run ID `${{ github.run_id }}`.
+          commit-message: 'native: refresh BN254 shim binaries (run ${{ github.run_id }})'
+          delete-branch: true
