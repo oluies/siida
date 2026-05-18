@@ -34,6 +34,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup JDK 21
+        # Match the project's constitution-pinned JDK so Mill (installed
+        # below) loads under the same JVM contributors use locally.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Mill on PATH
+        # Scala Steward's Mill integration invokes `mill` directly to query
+        # the build. The runner doesn't ship Mill, so install it via
+        # Coursier. We don't pin to .mill-version here; Steward only uses
+        # Mill for dependency resolution, and recent Mill versions are
+        # API-stable for that path.
+        uses: coursier/setup-action@v1
+        with:
+          apps: mill
+
       - name: Run Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
         with:
