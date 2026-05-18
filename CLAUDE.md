@@ -1,9 +1,9 @@
 <!-- SPECKIT START -->
-Active feature: 001-project-bootstrap.
-Plan: specs/001-project-bootstrap/plan.md
-Spec: specs/001-project-bootstrap/spec.md
-Research: specs/001-project-bootstrap/research.md
-Quickstart: specs/001-project-bootstrap/quickstart.md
-Read the plan first for technology stack, project structure, shell
-commands, and constitution-check decisions for this feature.
+Active feature: 003-dependency-automation.
+Plan: specs/003-dependency-automation/plan.md
+Spec: specs/003-dependency-automation/spec.md
+Tasks: specs/003-dependency-automation/tasks.md
+Tooling-only spec: adds a weekly Scala Steward workflow plus pins.
+The Go side of the build is intentionally excluded.
+Predecessor spec docs still apply (001 build / 002 crypto).
 <!-- SPECKIT END -->

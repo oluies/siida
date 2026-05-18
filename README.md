@@ -94,15 +94,16 @@ commands to produce them.
 | 000 | **Constitution** | Establish project principles, language stack, licence policy, threat-model commitments. Run `/speckit-constitution` first. |
 | 001 | `project-bootstrap` | Codify the Scala 3 + Pekko + Cats Effect 3 build, dual CI, repository layout. Revise this scaffold accordingly. |
 | 002 | `crypto-pairing` | Replace Alpenhorn's dclxvi `bn256` with a portable BN254 path (JNI to gnark-crypto vs. pure-Scala BN254). Port `ibe` and `bls`. |
-| 003 | `mixnet-server` | Coordinator, mixer, shuffle, onionbox on Pekko Streams. Round-based deterministic batch processing with explicit timing. |
-| 004 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
-| 005 | `config-chain-governance` | PKG operations and signed config-chain governance: the social-trust hinge that controls who is in the mixer/PKG set and how that membership rotates. Split from 004 so it has its own threat-model treatment. |
-| 006 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
-| 007 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
-| 008 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
+| 003 | `dependency-automation` | Weekly Scala Steward GitHub Actions workflow for JVM dependency bumps. Pins respect constitution v1.0.0 stack lines. Go side of the build excluded. |
+| 004 | `mixnet-server` | Coordinator, mixer, shuffle, onionbox on Pekko Streams. Round-based deterministic batch processing with explicit timing. |
+| 005 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
+| 006 | `config-chain-governance` | PKG operations and signed config-chain governance: the social-trust hinge that controls who is in the mixer/PKG set and how that membership rotates. Split from 005 so it has its own threat-model treatment. |
+| 007 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
+| 008 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
+| 009 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
 
-Past `008` likely lives a `009-chat-client` (replacing Vuvuzela's terminal
-`gocui` UI) and an `010-observability` (OpenTelemetry, ops dashboards).
+Past `009` likely lives a `010-chat-client` (replacing Vuvuzela's terminal
+`gocui` UI) and an `011-observability` (OpenTelemetry, ops dashboards).
 
 ## Build
 

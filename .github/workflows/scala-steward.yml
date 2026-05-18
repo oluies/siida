@@ -1,0 +1,50 @@
+name: Scala Steward
+
+# Opens PRs bumping JVM dependencies pinned in build.mill /
+# .mill-version when newer versions are available on Maven Central.
+# Pinning constraints live in .scala-steward.conf at the repository
+# root so they travel with the code.
+#
+# Cadence: weekly (Monday 00:00 UTC) plus manual workflow_dispatch.
+# Runs on GitHub Actions only — the Forgejo mirror is excluded by
+# living under .github/ rather than .forgejo/, and the per-PR CI
+# parity script ignores this file (it reads only the ci.yml workflow
+# pair by exact path).
+#
+# Per maintainer instruction (spec 003-dependency-automation):
+# the Go module under modules/crypto/native/ is OUT OF SCOPE for
+# automation. Scala Steward only sees JVM dependencies.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scala-steward:
+    name: scala-steward
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Scala Steward
+        uses: scala-steward-org/scala-steward-action@v2
+        with:
+          # STEWARD_TOKEN is a fine-grained PAT (contents: write +
+          # pull-requests: write) that triggers downstream CI on
+          # bot PRs. If absent, the default GITHUB_TOKEN is used and
+          # the maintainer must manually trigger CI on Steward PRs
+          # (close+reopen or push an empty commit).
+          github-token: ${{ secrets.STEWARD_TOKEN || secrets.GITHUB_TOKEN }}
+          repo-config: .scala-steward.conf
+          author-email: 'scala-steward@siida.local'
+          author-name: 'Scala Steward'
+          signing-key: ${{ secrets.STEWARD_SIGNING_KEY }}
+          ignore-opts-files: false
