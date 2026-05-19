@@ -101,9 +101,13 @@ commands to produce them.
 | 007 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
 | 008 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
 | 009 | `async-delivery-over-mixnet` | Delay-tolerant store-and-forward for offline recipients, layered over the mixnet. NATS JetStream or `dtn7-rs` as the bundle store; convergence-layer adapter. |
-
-Past `009` likely lives a `010-chat-client` (replacing Vuvuzela's terminal
-`gocui` UI) and an `011-observability` (OpenTelemetry, ops dashboards).
+| 010 | `chat-client` (sketched) | Replaces Vuvuzela's terminal `gocui` UI; cross-platform Scala client. |
+| 011 | `post-quantum-roadmap` | Threat-model amendment + per-primitive PQ replacement plan. Anchors choices to European certifications (BSI / ANSSI / ENISA) with Swedish research provenance noted; reserves slots 012–015 for the per-primitive migrations. Constitution amendment to v2.0.0 expected. |
+| 012 | `pq-mixnet-onion-layer` (sketched) | Hybrid ML-KEM-768 + x25519 for the round-aligned onion layers, replacing the classical-only NaCl `box`. |
+| 013 | `pq-bls-replacement` (sketched) | ML-DSA-65 for per-signer signatures, losing the BLS aggregation property. |
+| 014 | `pq-config-chain-redesign` (sketched) | Config-chain governance without aggregate signatures (batch verification of ML-DSA) or via a separate aggregate-friendly PQ scheme. |
+| 015 | `pq-identity-encryption` (sketched) | Replace Boneh-Franklin IBE with a PKG-directory + ML-KEM scheme; protocol-level redesign. |
+| 016 | `observability` (sketched) | OpenTelemetry, ops dashboards. Bumped from 011 by the PQ roadmap insertion. |
 
 ## Build
 
