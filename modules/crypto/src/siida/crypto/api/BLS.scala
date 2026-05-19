@@ -143,24 +143,60 @@ object BLS:
             case Right(sumPk) =>
               pairingEqual(g1Gen, aggSig.sigG2, sumPk, hG2)
 
-  /** Verify an aggregate signature over DISTINCT messages. Requires
-   *  a multi-pairing product (∏ e(pk_i, H_G2(msg_i)) == e(g1, aggSig))
-   *  which in turn needs either GT multiplication or G1 negation
-   *  exposed at the native ABI. Neither is in 002's first cut.
+  /** Verify an aggregate signature over DISTINCT messages. Rearranges
+   *  the verification equation
+   *     e(g1, aggSig) == ∏ e(pk_i, H_G2(msg_i))
+   *  into
+   *     e(g1, aggSig) · ∏ e(-pk_i, H_G2(msg_i)) == 1
+   *  using the bilinearity identity e(-P, Q) = e(P, Q)^{-1}, then
+   *  delegates to the native multi-pairing-check primitive.
    *
-   *  Throws UnsupportedOperationException; a follow-up PR will
-   *  extend `siida_bn254_*` with G1 negation and implement this via
-   *  the existing pairing-check primitive.
+   *  Distinct-message verification does NOT require proofs-of-possession
+   *  because rogue-key attacks fall over the distinctness constraint:
+   *  an adversary picking pk_X = -∑ honest_pk_i would have to also
+   *  produce a sig for each distinct msg_i under those honest keys.
+   *
+   *  Returns false on any failure: empty input, duplicate messages,
+   *  malformed key/sig bytes, hash-to-curve failure, or pairing
+   *  inequality.
    */
   def verifyAggregateDistinct(
-    @scala.annotation.unused pkMsgPairs: Seq[(BLSPublicKey, Array[Byte])],
-    @scala.annotation.unused aggSig:     BLSSignature,
+    pkMsgPairs: Seq[(BLSPublicKey, Array[Byte])],
+    aggSig:     BLSSignature,
   ): Boolean =
-    throw UnsupportedOperationException(
-      "BLS.verifyAggregateDistinct is not implemented in 002's first cut. " +
-        "It requires a multi-pairing product or G1 negation that's not yet " +
-        "in the native ABI. Follow-up PR will extend siida_bn254_g1_neg."
-    )
+    if pkMsgPairs.isEmpty then false
+    else if pkMsgPairs.map(_._2.toSeq).toSet.size != pkMsgPairs.size then
+      false // duplicate messages — caller wanted verifyAggregate (same-message)
+    else
+      // Build the negated public keys; bail on any failure.
+      val negPksAttempt: Either[Unit, Seq[Array[Byte]]] =
+        pkMsgPairs.foldLeft[Either[Unit, Seq[Array[Byte]]]](Right(Seq.empty)) {
+          case (Left(()), _) => Left(())
+          case (Right(acc), (pk, _)) =>
+            Bn254Ops.g1Neg(pk.publicG1) match
+              case Right(neg) => Right(acc :+ neg)
+              case Left(_)    => Left(())
+        }
+
+      // Build the hashed messages; bail on any failure.
+      val hashedAttempt: Either[Unit, Seq[Array[Byte]]] =
+        pkMsgPairs.foldLeft[Either[Unit, Seq[Array[Byte]]]](Right(Seq.empty)) {
+          case (Left(()), _) => Left(())
+          case (Right(acc), (_, msg)) =>
+            HashToCurve.forBLS(msg) match
+              case Right(h) => Right(acc :+ h)
+              case Left(_)  => Left(())
+        }
+
+      (negPksAttempt, hashedAttempt) match
+        case (Right(negPks), Right(hashes)) =>
+          val g1Inputs = g1Gen +: negPks
+          val g2Inputs = aggSig.sigG2 +: hashes
+          val pairs    = g1Inputs.zip(g2Inputs).toSeq
+          Bn254Ops.pairingCheck(pairs) match
+            case Right(b) => b
+            case Left(_)  => false
+        case _ => false
 
   // ── Proofs of possession ──────────────────────────────────────
 

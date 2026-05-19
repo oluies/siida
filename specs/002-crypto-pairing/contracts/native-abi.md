@@ -41,6 +41,12 @@ int siida_bn254_g2_scalar_mul(const uint8_t scalar[32], const uint8_t point[64],
 int siida_bn254_g1_add(const uint8_t p[32], const uint8_t q[32], uint8_t out[32]);
 int siida_bn254_g2_add(const uint8_t p[64], const uint8_t q[64], uint8_t out[64]);
 
+// Negation in G1; used by BLS.verifyAggregateDistinct to rearrange
+// the verification equation into a single pairing_check call.
+// (G2 negation isn't currently used in any verification path; add
+// when needed.)
+int siida_bn254_g1_neg(const uint8_t point[32], uint8_t out[32]);
+
 // Pairings
 int siida_bn254_pairing(const uint8_t g1[32], const uint8_t g2[64], uint8_t out[384]);
 

@@ -53,6 +53,11 @@ trait NativeBN254 extends Library:
   def siida_bn254_g1_add(p: Array[Byte], q: Array[Byte], out: Array[Byte]): Int
   def siida_bn254_g2_add(p: Array[Byte], q: Array[Byte], out: Array[Byte]): Int
 
+  // Negation (G1 only; sufficient for the multi-pairing-check
+  // rearrangements that BLS distinct-message aggregate verify
+  // needs)
+  def siida_bn254_g1_neg(point: Array[Byte], out: Array[Byte]): Int
+
   // Pairings
   def siida_bn254_pairing(g1: Array[Byte], g2: Array[Byte], out: Array[Byte]): Int
 
