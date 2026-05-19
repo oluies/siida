@@ -26,7 +26,7 @@ package siida.crypto.api
  *  expected failure modes (malformed input, wrong-identity
  *  decryption) return Left(IBEError) rather than throwing.
  */
-enum IBEError:
+enum IBEError derives CanEqual:
   case InvalidKey
   case InvalidPoint
   case MalformedCiphertext(reason: String)
@@ -34,7 +34,7 @@ enum IBEError:
   case DecryptionFailed
 
 /** Typed errors returned by the BLS public API. */
-enum BLSError:
+enum BLSError derives CanEqual:
   case InvalidKey
   case InvalidPoint
   case InvalidSignature
@@ -46,7 +46,7 @@ enum BLSError:
  *  (deserialisation paths). On-curve and subgroup checks happen at
  *  every deserialise call.
  */
-enum BN254Error:
+enum BN254Error derives CanEqual:
   case InvalidEncoding
   case PointNotOnCurve
   case PointNotInSubgroup
