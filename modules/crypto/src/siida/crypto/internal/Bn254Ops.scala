@@ -89,6 +89,15 @@ object Bn254Ops:
       )
     yield out
 
+  // ── Negation ────────────────────────────────────────────────────
+
+  def g1Neg(point: Array[Byte]): Either[BN254Error, Array[Byte]] =
+    for
+      _ <- BytesOps.checkLength(point, Native.G1_BYTES)
+      out = BytesOps.newG1Buf
+      _ <- BytesOps.returnCodeToEither(Native.lib.siida_bn254_g1_neg(point, out))
+    yield out
+
   // ── Pairings ────────────────────────────────────────────────────
 
   def pairing(g1: Array[Byte], g2: Array[Byte]): Either[BN254Error, Array[Byte]] =

@@ -151,6 +151,26 @@ func siida_bn254_g1_add(p *C.uint8_t, q *C.uint8_t, out *C.uint8_t) C.int {
 	return siidaOK
 }
 
+//export siida_bn254_g1_neg
+func siida_bn254_g1_neg(point *C.uint8_t, out *C.uint8_t) C.int {
+	pointSlice := C.GoBytes(unsafe.Pointer(point), 32)
+
+	var p bn254.G1Affine
+	if _, err := p.SetBytes(pointSlice); err != nil {
+		return siidaErrNotOnCurve
+	}
+	if !p.IsInSubGroup() {
+		return siidaErrNotInSubgroup
+	}
+
+	var result bn254.G1Affine
+	result.Neg(&p)
+
+	rb := result.Bytes()
+	C.memcpy(unsafe.Pointer(out), unsafe.Pointer(&rb[0]), 32)
+	return siidaOK
+}
+
 //export siida_bn254_g2_add
 func siida_bn254_g2_add(p *C.uint8_t, q *C.uint8_t, out *C.uint8_t) C.int {
 	pSlice := C.GoBytes(unsafe.Pointer(p), 64)

@@ -126,11 +126,58 @@ final class BLSSuite extends FunSuite:
       BLS.serialisePoP(BLS.deserialisePoP(BLS.serialisePoP(pop)).toOption.get).toSeq)
   }
 
-  test("verifyAggregateDistinct throws UnsupportedOperationException (documented stub)") {
-    val (sk, pk) = BLS.generateKeyPair(fixedRng("bls/distinct"))
-    val sig = BLS.sign(sk, message)
-    val agg = BLS.aggregate(Seq(sig)).toOption.get
-    intercept[UnsupportedOperationException] {
-      BLS.verifyAggregateDistinct(Seq((pk, message)), agg)
-    }
+  test("verifyAggregateDistinct: 3 signers over 3 distinct messages verifies") {
+    val (sk1, pk1) = BLS.generateKeyPair(fixedRng("bls/dist-1"))
+    val (sk2, pk2) = BLS.generateKeyPair(fixedRng("bls/dist-2"))
+    val (sk3, pk3) = BLS.generateKeyPair(fixedRng("bls/dist-3"))
+
+    val m1 = "epoch 1 config".getBytes("UTF-8")
+    val m2 = "epoch 2 config".getBytes("UTF-8")
+    val m3 = "epoch 3 config".getBytes("UTF-8")
+
+    val agg = BLS.aggregate(Seq(
+      BLS.sign(sk1, m1),
+      BLS.sign(sk2, m2),
+      BLS.sign(sk3, m3),
+    )).toOption.getOrElse { fail("aggregate failed") }
+
+    assert(
+      BLS.verifyAggregateDistinct(Seq((pk1, m1), (pk2, m2), (pk3, m3)), agg),
+      "verifyAggregateDistinct rejected an honest 3-signer distinct-message aggregate"
+    )
+  }
+
+  test("verifyAggregateDistinct rejects mismatched (pk, msg) order") {
+    val (sk1, pk1) = BLS.generateKeyPair(fixedRng("bls/dist-mix-1"))
+    val (sk2, pk2) = BLS.generateKeyPair(fixedRng("bls/dist-mix-2"))
+
+    val m1 = "alice's message".getBytes("UTF-8")
+    val m2 = "bob's message".getBytes("UTF-8")
+
+    val agg = BLS.aggregate(Seq(BLS.sign(sk1, m1), BLS.sign(sk2, m2)))
+      .toOption.getOrElse { fail("aggregate failed") }
+
+    // Swap m1 and m2 in the verification input → pairing check should fail
+    assert(
+      !BLS.verifyAggregateDistinct(Seq((pk1, m2), (pk2, m1)), agg),
+      "verifyAggregateDistinct accepted swapped (pk, msg) pairs"
+    )
+  }
+
+  test("verifyAggregateDistinct rejects duplicate messages (caller should use verifyAggregate instead)") {
+    val (sk1, pk1) = BLS.generateKeyPair(fixedRng("bls/dist-dup-1"))
+    val (sk2, pk2) = BLS.generateKeyPair(fixedRng("bls/dist-dup-2"))
+    val sameMsg = "shared".getBytes("UTF-8")
+    val agg = BLS.aggregate(Seq(BLS.sign(sk1, sameMsg), BLS.sign(sk2, sameMsg)))
+      .toOption.getOrElse { fail("aggregate failed") }
+    assert(
+      !BLS.verifyAggregateDistinct(Seq((pk1, sameMsg), (pk2, sameMsg)), agg),
+      "verifyAggregateDistinct accepted duplicate messages; should be verifyAggregate's job"
+    )
+  }
+
+  test("verifyAggregateDistinct rejects empty input") {
+    val (sk, _) = BLS.generateKeyPair(fixedRng("bls/dist-empty"))
+    val agg = BLS.aggregate(Seq(BLS.sign(sk, message))).toOption.get
+    assert(!BLS.verifyAggregateDistinct(Seq.empty, agg))
   }

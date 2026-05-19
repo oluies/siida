@@ -81,6 +81,14 @@ object BN254:
     Bn254Ops.g2Add(a, b)
       .getOrElse(throw RuntimeException("BN254.g2Add: native call rejected validated inputs"))
 
+  /** Negate a G1 point: returns `-p` such that `p + (-p) == identity`.
+   *  Used by `pairingCheck` rearrangements in BLS distinct-message
+   *  aggregate verification.
+   */
+  def g1Neg(p: G1Point): G1Point =
+    Bn254Ops.g1Neg(p)
+      .getOrElse(throw RuntimeException("BN254.g1Neg: native call rejected validated input"))
+
   // ── Pairings ────────────────────────────────────────────────
 
   def pairing(p: G1Point, q: G2Point): GTElement =

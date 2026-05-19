@@ -66,6 +66,18 @@ final class BN254Suite extends FunSuite:
     )
   }
 
+  test("g1Neg: p + (-p) returns the identity element (or pairingCheck holds)") {
+    val s = BN254.scalarRandom(fixedRng("bn254/neg"))
+    val p = BN254.g1ScalarMul(s, BN254.G1Generator)
+    val negP = BN254.g1Neg(p)
+    // e(p, g2) · e(-p, g2) = 1 — that's the BN254 bilinearity property
+    // we'll rely on for BLS distinct-message verify.
+    assert(
+      BN254.pairingCheck(Seq((p, BN254.G2Generator), (negP, BN254.G2Generator))),
+      "pairingCheck on (p, -p) didn't hold; G1 negation is wrong",
+    )
+  }
+
   test("g1Add is commutative") {
     val s1 = BN254.scalarRandom(fixedRng("bn254/add-1"))
     val s2 = BN254.scalarRandom(fixedRng("bn254/add-2"))
