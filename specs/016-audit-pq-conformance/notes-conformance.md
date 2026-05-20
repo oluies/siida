@@ -199,3 +199,31 @@ report update before the bump can land. Spec 016 is complete
 as a diagnostic instrument.
 
 Remediation (BC bump) is the work of a follow-up spec.
+
+---
+
+## 2026-05-20 update: remediation landed via spec 017
+
+Spec 017 (BC 1.78.1 → 1.84) closed the gap end-to-end.
+Audit results after the bump:
+
+| Test | Before (1.78.1) | After (1.84) |
+|---|---|---|
+| ML-KEM-768 keyGen | 0/25 | **25/25** ✅ |
+| ML-KEM-768 encap | 25/25 | 25/25 ✅ |
+| ML-KEM-768 decap | 25/25 | 25/25 ✅ |
+| ML-DSA-65 keyGen | 0/25 | **25/25** ✅ |
+| ML-DSA-65 sigGen | 0/15 | **15/15** ✅ |
+
+BC 1.84 ships:
+- The finalised FIPS 203 ML-KEM-768 (including the corrected
+  K-PKE.KeyGen that produces FIPS-published `(ek, dk)` byte-for-byte)
+- The finalised FIPS 204 ML-DSA-65 (including ctx parameter
+  support via `org.bouncycastle.crypto.params.ParametersWithContext`)
+
+Full bump record — including the BC API class moves from
+`pqc.crypto.crystals.*` to `crypto.{generators,kems,signers,params}.*`
+— at `specs/017-bc-version-bump/notes-bump.md`.
+
+The audit suite continues running on every `make test` as a
+guardrail against future regression.
