@@ -181,7 +181,12 @@ object modules extends Module {
     object test extends SiidaTests
   }
   object mixnet extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 004-mixnet-server: depends on modules.crypto for
+    // HybridOnion (012), PqSignature (013), IdentityEncryption (015).
+    override def moduleDeps = Seq(modules.crypto)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto)
+    }
   }
   object pkg extends SiidaModule {
     object test extends SiidaTests

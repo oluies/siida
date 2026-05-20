@@ -20,7 +20,17 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package siida.mixnet
+package siida.mixnet.api
 
-object Placeholder:
-  val name: String = "mixnet"
+/** Typed errors surfaced by the mixnet public API. Per spec 004,
+ *  per-call failures (a single submission failing to decrypt at a
+ *  mixer) do NOT raise these — they're silently dropped (FR-004).
+ *  These errors are reserved for programming-level violations
+ *  detected at API boundaries: chain-length mismatches, wrong-sized
+ *  shuffle seeds, malformed envelopes.
+ */
+enum MixnetError derives CanEqual:
+  case InvalidLength
+  case MalformedEnvelope(reason: String)
+  case ChainLengthMismatch(have: Int, want: Int)
+  case ShuffleSeedSize(have: Int, want: Int)
