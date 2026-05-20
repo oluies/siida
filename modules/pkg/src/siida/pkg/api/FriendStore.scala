@@ -55,6 +55,27 @@ object FriendStore:
 
   def inMemory(): FriendStore = new InMemoryFriendStore()
 
+  /** Persistent FriendStore (spec 020 US3). On-disk file at `path`
+   *  containing the friend identities and their bundles. Per FR-004
+   *  the file is atomically rewritten on every `add` (write-tmp +
+   *  rename) so a crash mid-add cannot corrupt the existing store.
+   *
+   *  Wire format:
+   *  ```
+   *  offset  size  field
+   *  0       4     magic "SIFD" (0x53 0x49 0x46 0x44)
+   *  4       N     repeating records:
+   *    2     identity_len (uint16 BE)
+   *    L     identity_bytes
+   *    1216  bundle_bytes (HybridOnion.serialisePublicBundle)
+   *  ```
+   *
+   *  Concurrent writers on the same path are NOT supported; the
+   *  caller is responsible for single-writer discipline.
+   */
+  def persistent(path: java.nio.file.Path): Either[String, FriendStore] =
+    PersistentFriendStore.openOrCreate(path)
+
   private final class InMemoryFriendStore extends FriendStore:
 
     // Identity bytes wrapped in an ArraySeq so structural
