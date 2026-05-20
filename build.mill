@@ -155,7 +155,11 @@ object SiidaBuild extends Module {
 // does not care.
 object modules extends Module {
   object core extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 010-chat-client: depends on sdk + pkg (FriendStore).
+    override def moduleDeps = Seq(modules.sdk, modules.crypto, modules.mixnet, modules.pkg)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.sdk, modules.crypto, modules.mixnet, modules.pkg)
+    }
   }
   object crypto extends SiidaModule {
     // Per-spec 002-crypto-pairing: add JNA for the FFI to the native
