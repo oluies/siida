@@ -215,7 +215,12 @@ object modules extends Module {
     }
   }
   object agent extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 008-agent-messaging: depends on sdk (which transitively
+    // pulls crypto/mixnet/pkg/configchain).
+    override def moduleDeps = Seq(modules.sdk, modules.crypto, modules.mixnet, modules.pkg)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.sdk, modules.crypto, modules.mixnet, modules.pkg)
+    }
   }
   object async extends SiidaModule {
     object test extends SiidaTests
