@@ -20,11 +20,22 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package siida.configchain
+package siida.configchain.api
 
-import munit.FunSuite
-
-final class PlaceholderSuite extends FunSuite:
-  test("Placeholder.name is the module name") {
-    assertEquals(Placeholder.name, "configchain")
-  }
+/** Typed errors returned by ConfigChain operations (spec 006).
+ *
+ *  All append-time outcomes (other than "everything OK") collapse
+ *  here so callers can pattern-match exhaustively under
+ *  `-Werror -language:strictEquality`.
+ */
+enum ConfigChainError derives CanEqual:
+  case InvalidPayload(reason: String)
+  case UnsupportedVersion
+  case GenesisAlreadyEstablished
+  case WrongPredecessor
+  case EpochNotMonotonic(expected: Long, found: Long)
+  case ThresholdNotMet(validCount: Int, required: Int)
+  case AlreadyApplied
+  case BadRoster(reason: String)
+  case BadThreshold(reason: String)
+  case MalformedEntry(reason: String)
