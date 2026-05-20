@@ -95,7 +95,7 @@ commands to produce them.
 | 001 | `project-bootstrap` | Codify the Scala 3 + Pekko + Cats Effect 3 build, dual CI, repository layout. Revise this scaffold accordingly. |
 | 002 | `crypto-pairing` | Replace Alpenhorn's dclxvi `bn256` with a portable BN254 path (JNI to gnark-crypto vs. pure-Scala BN254). Port `ibe` and `bls`. |
 | 003 | `dependency-automation` | Weekly Scala Steward GitHub Actions workflow for JVM dependency bumps. Pins respect constitution v1.0.0 stack lines. Go side of the build excluded. |
-| 004 | `mixnet-server` | Coordinator, mixer, shuffle, onionbox on Pekko Streams. Round-based deterministic batch processing with explicit timing. |
+| 004 | `mixnet-server` | Coordinator + mixer chain + deterministic shuffle on top of `HybridOnion` (012). MVP shipped 2026-05-20: single-JVM, in-memory round execution. Distributed deployment, persistence, crash recovery, live roster rotation, and observability are deferred to follow-up specs. |
 | 005 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
 | 006 | `config-chain-governance` | PKG operations and signed config-chain governance: the social-trust hinge that controls who is in the mixer/PKG set and how that membership rotates. Split from 005 so it has its own threat-model treatment. |
 | 007 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
