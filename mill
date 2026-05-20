@@ -33,8 +33,14 @@ CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/mill/download"
 # Mill release artefacts are self-executable shell+jar assemblies, not
 # plain JARs — they have a small POSIX-shell prefix that picks the right
 # `java` invocation. Don't rename to .jar; don't run with `java -jar`.
+#
+# Source: Maven Central. From Mill 0.12.6+ the team stopped uploading the
+# assembly to GitHub releases; the canonical home is the mill-dist
+# artefact at com.lihaoyi:mill-dist on Maven Central. The jar there is
+# the same shell-prefixed self-executable as the old GitHub release
+# asset.
 MILL_BIN="${CACHE_DIR}/${MILL_VERSION}/mill-${MILL_VERSION}"
-MILL_URL="https://github.com/com-lihaoyi/mill/releases/download/${MILL_VERSION}/${MILL_VERSION}-assembly"
+MILL_URL="https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/${MILL_VERSION}/mill-dist-${MILL_VERSION}.jar"
 
 if [[ ! -f "${MILL_BIN}" ]]; then
   mkdir -p "$(dirname "${MILL_BIN}")"
