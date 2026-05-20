@@ -107,7 +107,8 @@ commands to produce them.
 | 013 | `pq-bls-replacement` (sketched) | ML-DSA-65 for per-signer signatures, losing the BLS aggregation property. |
 | 014 | `pq-config-chain-redesign` (sketched) | Config-chain governance without aggregate signatures (batch verification of ML-DSA) or via a separate aggregate-friendly PQ scheme. |
 | 015 | `pq-identity-encryption` (sketched) | Replace Boneh-Franklin IBE with a PKG-directory + ML-KEM scheme; protocol-level redesign. |
-| 016 | `observability` (sketched) | OpenTelemetry, ops dashboards. Bumped from 011 by the PQ roadmap insertion. |
+| 016 | `audit-pq-conformance` | Verify Bouncy Castle's ML-KEM-768 and ML-DSA-65 match FIPS 203 / 204 byte-for-byte against NIST ACVP vectors. Diagnostic-only; produces a conformance report + CI-enforced audit suite that catches regressions on future BC bumps. |
+| 017 | `observability` (sketched) | OpenTelemetry, ops dashboards. Bumped from 016 by the audit-pq-conformance insertion. |
 
 ## Build
 
