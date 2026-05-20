@@ -175,7 +175,7 @@ object modules extends Module {
     // The native/ subdirectory also contains Go/C source files; they
     // get bundled too (~few KB) but are not loaded.
     override def resources = T.sources {
-      super.resources() ++ Seq(PathRef(millSourcePath / "native"))
+      super.resources() ++ Seq(PathRef(moduleDir / "native"))
     }
 
     object test extends SiidaTests
@@ -198,7 +198,12 @@ object modules extends Module {
     }
   }
   object configchain extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 006-config-chain-governance: depends on modules.crypto
+    // for PqSignature (013) + MultiSignedEntry (014).
+    override def moduleDeps = Seq(modules.crypto)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto)
+    }
   }
   object sdk extends SiidaModule {
     object test extends SiidaTests
