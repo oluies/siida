@@ -66,6 +66,16 @@ enum HybridOnionError derives CanEqual:
   case DecapsulationFailed
   case MalformedCiphertext(reason: String)
 
+/** Typed errors returned by the PqSignature public API (spec
+ *  013-pq-bls-replacement). Per FR-013, refusals are uniform —
+ *  callers learn that something is wrong, not what.
+ */
+enum PqSignatureError derives CanEqual:
+  case UnsupportedAlgorithm
+  case InvalidLength
+  case MalformedKey
+  case MalformedSignature
+
 /** Exception raised at JVM startup when the native shim cannot be
  *  loaded. Distinct from BN254Error because the failure mode is
  *  programming-environment, not per-call. See
