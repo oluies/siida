@@ -230,19 +230,19 @@ object HybridOnion:
 
   // ── ML-KEM public-key recovery from secret ─────────────────────
 
-  /** BC's KyberPrivateKeyParameters embeds the public key. We re-
+  /** BC's MLKEMPrivateKeyParameters embeds the public key. We re-
    *  construct the parameters from the serialised secret bytes and
    *  read back the public-key half.
    */
   private def mlKemPkFromSk(skBytes: Array[Byte]): Array[Byte] =
-    import org.bouncycastle.pqc.crypto.crystals.kyber.{
-      KyberParameters,
-      KyberPrivateKeyParameters,
+    import org.bouncycastle.crypto.params.{
+      MLKEMParameters,
+      MLKEMPrivateKeyParameters,
     }
-    val sk = KyberPrivateKeyParameters(KyberParameters.kyber768, skBytes)
+    val sk = MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_768, skBytes)
     // BC's encoded secret key concatenates several pieces; the
     // recoverable public-key bytes live at a known offset. The
-    // KyberPrivateKeyParameters object exposes a getPublicKey()
+    // MLKEMPrivateKeyParameters object exposes a getPublicKey()
     // method that returns the parameters; we ask for its encoded
     // form.
     val pk = sk.getPublicKeyParameters

@@ -23,19 +23,20 @@
 package siida.crypto.internal
 
 import java.security.SecureRandom
-import org.bouncycastle.pqc.crypto.crystals.kyber.{
-  KyberKeyGenerationParameters,
-  KyberKeyPairGenerator,
-  KyberParameters,
-  KyberKEMGenerator,
-  KyberKEMExtractor,
-  KyberPublicKeyParameters,
-  KyberPrivateKeyParameters,
+import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator
+import org.bouncycastle.crypto.kems.{MLKEMGenerator, MLKEMExtractor}
+import org.bouncycastle.crypto.params.{
+  MLKEMKeyGenerationParameters,
+  MLKEMParameters,
+  MLKEMPublicKeyParameters,
+  MLKEMPrivateKeyParameters,
 }
 import siida.crypto.api.HybridOnionError
 
-/** Bouncy Castle ML-KEM-768 (FIPS 203, BC class names retain the
- *  legacy "Kyber" identifier — same algorithm).
+/** Bouncy Castle ML-KEM-768 (FIPS 203). BC 1.84 placed the
+ *  finalised FIPS-named classes under `org.bouncycastle.crypto.*`
+ *  (the legacy `pqc.crypto.crystals.kyber.*` package was removed,
+ *  the post-rename `pqc.crypto.mlkem.*` shims are deprecated).
  *
  *  Wire sizes (FIPS 203, parameter set 3):
  *    public key       : 1184 bytes
@@ -50,24 +51,23 @@ object MlKem:
   inline val CiphertextBytes     = 1088
   inline val SharedSecretBytes   = 32
 
-  // Kyber768 in BC's nomenclature == ML-KEM-768 per FIPS 203
-  private val params = KyberParameters.kyber768
+  private val params = MLKEMParameters.ml_kem_768
 
   /** Generate a fresh ML-KEM-768 keypair. Returns `(skBytes, pkBytes)`. */
   def keygen(rng: SecureRandom): (Array[Byte], Array[Byte]) =
-    val gen = KyberKeyPairGenerator()
-    gen.init(KyberKeyGenerationParameters(rng, params))
+    val gen = MLKEMKeyPairGenerator()
+    gen.init(MLKEMKeyGenerationParameters(rng, params))
     val pair = gen.generateKeyPair()
-    val sk = pair.getPrivate.asInstanceOf[KyberPrivateKeyParameters].getEncoded
-    val pk = pair.getPublic.asInstanceOf[KyberPublicKeyParameters].getEncoded
+    val sk = pair.getPrivate.asInstanceOf[MLKEMPrivateKeyParameters].getEncoded
+    val pk = pair.getPublic.asInstanceOf[MLKEMPublicKeyParameters].getEncoded
     (sk, pk)
 
   /** Encapsulate a shared secret to a recipient's public key. Returns
    *  `(ciphertext, sharedSecret)`.
    */
   def encap(pkBytes: Array[Byte], rng: SecureRandom): (Array[Byte], Array[Byte]) =
-    val pk = KyberPublicKeyParameters(params, pkBytes)
-    val enc = KyberKEMGenerator(rng)
+    val pk = MLKEMPublicKeyParameters(params, pkBytes)
+    val enc = MLKEMGenerator(rng)
     val sec = enc.generateEncapsulated(pk)
     (sec.getEncapsulation, sec.getSecret)
 
@@ -80,8 +80,8 @@ object MlKem:
       Left(HybridOnionError.InvalidLength)
     else
       try
-        val sk = KyberPrivateKeyParameters(params, skBytes)
-        val ext = KyberKEMExtractor(sk)
+        val sk = MLKEMPrivateKeyParameters(params, skBytes)
+        val ext = MLKEMExtractor(sk)
         Right(ext.extractSecret(ct))
       catch
         case _: Throwable => Left(HybridOnionError.DecapsulationFailed)

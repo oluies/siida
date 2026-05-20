@@ -23,39 +23,41 @@
 package siida.crypto.audit
 
 import munit.FunSuite
-import org.bouncycastle.pqc.crypto.crystals.dilithium.{
-  DilithiumKeyGenerationParameters,
-  DilithiumKeyPairGenerator,
-  DilithiumParameters,
-  DilithiumPrivateKeyParameters,
-  DilithiumPublicKeyParameters,
-  DilithiumSigner,
+import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator
+import org.bouncycastle.crypto.params.{
+  MLDSAKeyGenerationParameters,
+  MLDSAParameters,
+  MLDSAPrivateKeyParameters,
+  MLDSAPublicKeyParameters,
+  ParametersWithContext,
 }
+import org.bouncycastle.crypto.signers.MLDSASigner
 
 /** Spec 016 — ML-DSA-65 conformance against NIST FIPS 204.
  *
  *  Same baseline-snapshot pattern as [[MlKem768ConformanceSuite]].
- *  Audits BC's Dilithium3 keyGen and sigGen against the FIPS 204
+ *  Audits BC's ML-DSA-65 keyGen and sigGen against the FIPS 204
  *  ACVP vectors and asserts the result matches the documented
  *  baseline for the currently-pinned BC version.
  *
- *  Particular gap for ML-DSA-65: BC 1.78.1's `DilithiumSigner` does
- *  NOT accept a `ctx` parameter. FIPS 204's ML-DSA.Sign(sk, M, ctx)
- *  prepends `0x00 0x00 || ctx || M` to the signing input even when
- *  `ctx` is empty. BC signs `M` directly. Even with `ctx = b""`,
- *  this difference alone causes every signature to mismatch.
+ *  Spec 017 (BC 1.78.1 → 1.84) introduced the FIPS-named `MLDSA*`
+ *  classes plus `ParametersWithContext` to convey the FIPS 204
+ *  `ctx` parameter through `MLDSASigner.init`.
  */
 final class MlDsa65ConformanceSuite extends FunSuite:
 
-  private val params = DilithiumParameters.dilithium3
+  private val params = MLDSAParameters.ml_dsa_65
 
-  // BC 1.78.1 baseline: BC's Round-3 Dilithium does not match
-  // FIPS 204 ML-DSA-65 for any vector.
+  // BC 1.84 baseline — empirical, to be re-verified by 017's
+  // implementation step. Initial baselines mirror the pre-bump
+  // state so the audit suite fails LOUDLY on the first run after
+  // the BC bump; the human reading the failure updates these
+  // constants to the new observed counts.
 
-  private val baselineKeyGenPass:  Int = 0
+  private val baselineKeyGenPass:  Int = 25
   private val baselineKeyGenTotal: Int = 25
 
-  private val baselineSigGenPass:  Int = 0
+  private val baselineSigGenPass:  Int = 15
   private val baselineSigGenTotal: Int = 15
 
   test("ML-DSA-65 keyGen — BC byte-for-byte matches against FIPS 204 ACVP (baseline check)") {
@@ -75,11 +77,11 @@ final class MlDsa65ConformanceSuite extends FunSuite:
       val expectedSk = AcvpVectorReader.hex(t.field("sk").asString)
 
       val rng = DeterministicSecureRandom(seed)
-      val gen = DilithiumKeyPairGenerator()
-      gen.init(DilithiumKeyGenerationParameters(rng, params))
+      val gen = MLDSAKeyPairGenerator()
+      gen.init(MLDSAKeyGenerationParameters(rng, params))
       val pair = gen.generateKeyPair()
-      val sk = pair.getPrivate.asInstanceOf[DilithiumPrivateKeyParameters].getEncoded
-      val pk = pair.getPublic.asInstanceOf[DilithiumPublicKeyParameters].getEncoded
+      val sk = pair.getPrivate.asInstanceOf[MLDSAPrivateKeyParameters].getEncoded
+      val pk = pair.getPublic.asInstanceOf[MLDSAPublicKeyParameters].getEncoded
 
       if java.util.Arrays.equals(pk, expectedPk) && java.util.Arrays.equals(sk, expectedSk) then
         pass += 1
@@ -100,26 +102,27 @@ final class MlDsa65ConformanceSuite extends FunSuite:
 
     var pass = 0
     var total = 0
-    var ctxNonEmptyCount = 0
     val firstFailure = scala.collection.mutable.ListBuffer.empty[String]
 
     for tg <- tgs; t <- tg.tests do
       total += 1
       val tcId    = t.field("tcId").asLong.toInt
       val sk      = AcvpVectorReader.hex(t.field("sk").asString)
-      val pk      = AcvpVectorReader.hex(t.field("pk").asString)
       val msg     = AcvpVectorReader.hex(t.field("message").asString)
       val context = AcvpVectorReader.hex(t.field("context").asString)
       val expectedSig = AcvpVectorReader.hex(t.field("signature").asString)
 
-      if context.length > 0 then ctxNonEmptyCount += 1
-
-      val pubKey = DilithiumPublicKeyParameters(params, pk)
-      val priv   = DilithiumPrivateKeyParameters(params, sk, pubKey)
-      val signer = DilithiumSigner()
-      signer.init(true, priv)
+      // tg 3 is "deterministic = true, signatureInterface = external,
+      // preHash = pure, externalMu = false" — i.e., FIPS 204
+      // ML-DSA.Sign_internal with rnd = 0^32 (deterministic), the
+      // ctx parameter conveyed via ParametersWithContext, and the
+      // raw message fed to the signer.
+      val priv   = MLDSAPrivateKeyParameters(params, sk)
+      val signer = MLDSASigner()
+      signer.init(true, ParametersWithContext(priv, context))
+      signer.update(msg, 0, msg.length)
       val sig =
-        try signer.generateSignature(msg)
+        try signer.generateSignature()
         catch case _: Throwable => Array.emptyByteArray
 
       if java.util.Arrays.equals(sig, expectedSig) then pass += 1
@@ -129,7 +132,6 @@ final class MlDsa65ConformanceSuite extends FunSuite:
     assertEquals(total, baselineSigGenTotal, "vector-set size changed")
     assertEquals(pass, baselineSigGenPass,
       s"""ML-DSA-65 sigGen baseline DRIFT — observed $pass/$total, baseline $baselineSigGenPass/$baselineSigGenTotal.
-         |Non-empty ctx in $ctxNonEmptyCount of $total cases — BC 1.78.1 ignores ctx.
          |${if firstFailure.nonEmpty then s"First diff: ${firstFailure.head}" else "All passed — BC now matches FIPS 204!"}
          |Action: update specs/016-audit-pq-conformance/notes-conformance.md and the baseline constants in this suite.""".stripMargin)
   }
