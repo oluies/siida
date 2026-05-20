@@ -226,6 +226,11 @@ object modules extends Module {
       override def moduleDeps = super.moduleDeps ++ Seq(modules.sdk, modules.crypto, modules.mixnet, modules.pkg)
     }
   }
+  object observability extends SiidaModule {
+    // Per-spec 018-observability: in-process telemetry abstraction.
+    // No external deps (OTEL etc. land in a follow-up).
+    object test extends SiidaTests
+  }
   object async extends SiidaModule {
     // Per-spec 009-async-delivery: depends on modules.mixnet for the
     // MailboxEnvelope opaque type.
