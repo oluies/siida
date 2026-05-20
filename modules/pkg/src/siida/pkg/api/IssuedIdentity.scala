@@ -20,7 +20,23 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package siida.pkg
+package siida.pkg.api
 
-object Placeholder:
-  val name: String = "pkg"
+import siida.crypto.api.{HybridOnion, MultiSignedEntry}
+
+/** The PKG's response to a successful `issueIdentity` call.
+ *
+ *  - `secretBundle` is the user's to hold (delivered out-of-band).
+ *    The PKG does NOT retain it (SC-006).
+ *  - `mailboxId` is the per-identity routing key into the dead-
+ *    drop store (spec 004's space, with reserved IDs skipped).
+ *  - `publicBundle` and `proof` are echoed back for the caller's
+ *    verification convenience; both are also stored in the PKG's
+ *    directory for future `lookup` calls.
+ */
+final case class IssuedIdentity(
+  secretBundle: HybridOnion.HybridSecretBundle,
+  mailboxId:    Long,
+  publicBundle: HybridOnion.HybridPublicBundle,
+  proof:        MultiSignedEntry.Entry,
+)

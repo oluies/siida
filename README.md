@@ -96,7 +96,7 @@ commands to produce them.
 | 002 | `crypto-pairing` | Replace Alpenhorn's dclxvi `bn256` with a portable BN254 path (JNI to gnark-crypto vs. pure-Scala BN254). Port `ibe` and `bls`. |
 | 003 | `dependency-automation` | Weekly Scala Steward GitHub Actions workflow for JVM dependency bumps. Pins respect constitution v1.0.0 stack lines. Go side of the build excluded. |
 | 004 | `mixnet-server` | Coordinator + mixer chain + deterministic shuffle on top of `HybridOnion` (012). MVP shipped 2026-05-20: single-JVM, in-memory round execution. Distributed deployment, persistence, crash recovery, live roster rotation, and observability are deferred to follow-up specs. |
-| 005 | `pkg-keybootstrap` | Alpenhorn-style private key generator and friend-discovery primitives. |
+| 005 | `pkg-keybootstrap` | Private Key Generator: identity onboarding + signed directory entries consumed by 015. MVP shipped 2026-05-20: in-memory single-PKG state, `issueIdentity` + `directorySnapshot` end-to-end against 015's `IdentityEncryption`. Friend-discovery (Alpenhorn add-request flow), persistent storage, network transport, sybil resistance, and roster rotation are deferred to follow-up specs. |
 | 006 | `config-chain-governance` | PKG operations and signed config-chain governance: the social-trust hinge that controls who is in the mixer/PKG set and how that membership rotates. Split from 005 so it has its own threat-model treatment. |
 | 007 | `client-sdk` | Scala client SDK on Cats Effect 3 fibers. Wire formats, retransmission, config-chain verification. |
 | 008 | `agent-messaging` | The new layer: APIs and conventions for autonomous AI agents to exchange messages over Siida. |
