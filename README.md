@@ -111,6 +111,7 @@ commands to produce them.
 | 017 | `bc-version-bump` | Bump `bcprov-jdk18on` 1.78.1 → 1.84 to close the FIPS 203 / 204 conformance gap surfaced by 016. Audit suite verifies the result; baseline constants update; report appended. Small, mechanical, gated by 016. |
 | 018 | `observability` (sketched) | OpenTelemetry, ops dashboards. Bumped from 017 by the bc-version-bump insertion. |
 | 019 | `friend-discovery` | Alpenhorn-style add-request primitive (alice → bob). MVP shipped 2026-05-20: `Friendship.{buildAddRequest, processAddRequest, verifyAddRequest}` + in-memory `FriendStore`. Mixnet routing, add-response, friendship-key dial tokens, persistent store, and revocation are deferred to follow-up specs. |
+| 020 | `friend-discovery-followups` | Add-response half (bob → alice), deterministic `Friendship.deriveFriendshipKey` (symmetric per-pair secret from public bundles + add-id; stand-in for Alpenhorn's IBE-based dial tokens removed by 015), and persistent `FriendStore` (atomic file-backed store with SIFD magic). MVP shipped 2026-05-20. Full Alpenhorn dial tokens, revocation, unfriend, and encryption-at-rest of the persistent store are deferred to follow-up specs. |
 
 ## Build
 

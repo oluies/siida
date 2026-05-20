@@ -40,14 +40,21 @@ import siida.crypto.api.{Directory, HybridOnion, IdentityEncError}
  */
 object Friendship:
 
-  opaque type AddRequest = Array[Byte]
+  opaque type AddRequest  = Array[Byte]
+  opaque type AddResponse = Array[Byte]
 
   object AlgorithmID:
-    val AddRequest_v1: Byte = 0x30.toByte
+    val AddRequest_v1:  Byte = 0x30.toByte
+    val AddResponse_v1: Byte = 0x31.toByte
 
   final case class AddRequestContent(
     senderIdentity:     Array[Byte],
     senderPublicBundle: HybridOnion.HybridPublicBundle,
+  )
+
+  final case class AddResponseContent(
+    senderIdentity: Array[Byte],
+    ackPayload:     Array[Byte],
   )
 
   // ── Construction ───────────────────────────────────────────────
@@ -133,3 +140,81 @@ object Friendship:
     else if bytes(0) != AlgorithmID.AddRequest_v1 then
       Left(FriendshipError.UnsupportedAlgorithm)
     else Right(bytes.clone())
+
+  // ── AddResponse (spec 020) ─────────────────────────────────────
+
+  /** Bob constructs an add-response to alice. Pack bob's identity +
+   *  ack payload as the plaintext; encrypt under alice's bundle via
+   *  HybridOnion; prefix with the 0x31 algorithm-ID.
+   *
+   *  The ack payload is opaque to this primitive — typical use is a
+   *  small ack flag or a hash of the friendship key, depending on
+   *  the calling protocol. Caller decides.
+   */
+  def buildAddResponse(
+    senderIdentity:        Array[Byte],
+    ackPayload:            Array[Byte],
+    recipientPublicBundle: HybridOnion.HybridPublicBundle,
+    rng:                   SecureRandom,
+  ): AddResponse =
+    val payload = AddResponseWire.encode(senderIdentity, ackPayload)
+    val layer = HybridOnion.encrypt(recipientPublicBundle, payload, rng)
+    val layerBytes = HybridOnion.serialiseLayer(layer)
+    val out = new Array[Byte](1 + layerBytes.length)
+    out(0) = AlgorithmID.AddResponse_v1
+    System.arraycopy(layerBytes, 0, out, 1, layerBytes.length)
+    out
+
+  def processAddResponse(
+    recipientSecret: HybridOnion.HybridSecretBundle,
+    ct:              AddResponse,
+  ): Either[FriendshipError, AddResponseContent] =
+    if ct.length < 1 + 1137 then Left(FriendshipError.InvalidLength)
+    else if ct(0) != AlgorithmID.AddResponse_v1 then
+      Left(FriendshipError.UnsupportedAlgorithm)
+    else
+      val layerBytes = java.util.Arrays.copyOfRange(ct, 1, ct.length)
+      HybridOnion.deserialiseLayer(layerBytes) match
+        case Left(_)      => Left(FriendshipError.MalformedRequest("layer deserialise failed"))
+        case Right(layer) =>
+          HybridOnion.decrypt(recipientSecret, layer) match
+            case Left(_)      => Left(FriendshipError.DecryptionFailed)
+            case Right(plain) =>
+              AddResponseWire.decode(plain) match
+                case None              => Left(FriendshipError.MalformedRequest("payload decode failed"))
+                case Some((id, ack))   => Right(AddResponseContent(id, ack))
+
+  def serialiseAddResponse(resp: AddResponse): Array[Byte] = resp.clone()
+
+  def deserialiseAddResponse(bytes: Array[Byte]): Either[FriendshipError, AddResponse] =
+    if bytes.length < 1 + 1137 then Left(FriendshipError.InvalidLength)
+    else if bytes(0) != AlgorithmID.AddResponse_v1 then
+      Left(FriendshipError.UnsupportedAlgorithm)
+    else Right(bytes.clone())
+
+  // ── Friendship key derivation (spec 020 US2) ──────────────────
+
+  /** Deterministically derive a 32-byte symmetric friendship key
+   *  from a pair of public bundles + an add-id. The function is
+   *  order-independent in (myBundle, theirBundle) because the two
+   *  serialised forms are byte-sorted before hashing.
+   *
+   *  This is a stand-in for Alpenhorn's per-epoch dial tokens. The
+   *  full Alpenhorn mechanism requires either Boneh-Franklin IBE
+   *  (removed by spec 015) or a PQ replacement (deferred). For the
+   *  MVP, callers deriving the same `adId` produce the same key.
+   */
+  def deriveFriendshipKey(
+    myBundle:    HybridOnion.HybridPublicBundle,
+    theirBundle: HybridOnion.HybridPublicBundle,
+    adId:        Array[Byte],
+  ): Array[Byte] =
+    val a = HybridOnion.serialisePublicBundle(myBundle)
+    val b = HybridOnion.serialisePublicBundle(theirBundle)
+    val (lo, hi) = if java.util.Arrays.compare(a, b) <= 0 then (a, b) else (b, a)
+    val md = java.security.MessageDigest.getInstance("SHA3-256")
+    md.update("siida/friendship/v1/key".getBytes("UTF-8"))
+    md.update(lo)
+    md.update(hi)
+    md.update(adId)
+    md.digest()
