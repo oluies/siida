@@ -206,7 +206,13 @@ object modules extends Module {
     }
   }
   object sdk extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 007-client-sdk: composes 012/013/015 (crypto), 004
+    // (mixnet layered submission), 005/019 (pkg + friendship), 006
+    // (configchain).
+    override def moduleDeps = Seq(modules.crypto, modules.mixnet, modules.pkg, modules.configchain)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet, modules.pkg, modules.configchain)
+    }
   }
   object agent extends SiidaModule {
     object test extends SiidaTests
