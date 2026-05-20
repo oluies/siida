@@ -168,6 +168,23 @@ any one tuple with a forgery flips the result to `false`.
   (Dilithium) provider — no Siida-original lattice implementation.
   Same library choice as 012 (BC's PQ provider is pure-Java; no
   per-arch matrix needed).
+- **FR-012** *(security-review hardening)*: The randomised
+  coefficients used by `batchVerify`'s Scala-layer construction
+  (research R3) MUST be drawn from `java.security.SecureRandom`
+  (or another CSPRNG) per invocation. Deterministic-seeded
+  coefficients (e.g., derived from the messages themselves) would
+  let a malicious signer pre-craft messages that game the batch
+  cancellation; a fresh CSPRNG draw per `batchVerify` call closes
+  that path. Tests use a documented fixed seed for reproducibility
+  but production paths MUST use the platform CSPRNG.
+- **FR-013** *(security-review hardening)*: Algorithm-ID rejection
+  MUST be implemented uniformly — no timing variance, no
+  error-message variance, no per-ID logging — between known-bad
+  values (e.g., a deprecated future variant) and unknown values
+  (e.g., random bytes from a probe). The error message MUST NOT
+  reveal which algorithm IDs the implementation supports. Same
+  refusal-uniformity discipline applies in 014 (FR-012) and 015
+  (FR-011).
 
 ## Success Criteria *(mandatory)*
 

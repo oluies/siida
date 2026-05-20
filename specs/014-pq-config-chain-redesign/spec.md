@@ -172,6 +172,21 @@ wire format and applies the US1/US2 predicate.
   stability discipline).
 - **FR-010**: The public Scala API surface MUST be stable post-014
   merge per the same FR-010 pattern as 002 / 012 / 013.
+- **FR-011** *(security-review hardening)*: The `validCount` field
+  on `ThresholdNotMet(validCount, required)` MUST carry the
+  aggregate count only. Implementations MUST NOT log, expose via
+  metrics, or otherwise side-channel the per-signer pass/fail
+  breakdown — the `validCount` integer is the only externally
+  visible piece of "which signatures verified" information.
+  Operators who need the per-signer breakdown use a separate
+  debug-mode tool, not the production verification path. Same
+  no-side-channel discipline as 015's
+  `IdentityEncError.DecapsulationFailed` (per 012 FR-006).
+- **FR-012** *(security-review hardening)*: Format-version
+  rejection (unknown version byte in the wire format) MUST be
+  uniform per the same constant-timing / no-variance discipline
+  as 013 FR-013. The error message MUST NOT reveal which
+  versions the implementation supports.
 
 ## Success Criteria *(mandatory)*
 
