@@ -20,7 +20,21 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package siida.sdk
+package siida.sdk.api
 
-object Placeholder:
-  val name: String = "sdk"
+/** Typed errors returned by `SiidaClient`.
+ *
+ *  Distinct from underlying primitive errors (HybridOnionError,
+ *  FriendshipError, IdentityEncError) because the SDK is the layer
+ *  that decides "what does the user see when X fails"; the
+ *  conversion happens at the SDK boundary.
+ */
+enum SdkError derives CanEqual:
+  case IdentityNotInDirectory
+  case BadDirectoryProof
+  case WrongMailbox
+  case UnsupportedSdkType
+  case DecryptionFailed
+  case MalformedEnvelope(reason: String)
+  case AddRequestVerificationFailed
+  case InternalError(reason: String)
