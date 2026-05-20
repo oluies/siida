@@ -45,6 +45,14 @@ import siida.crypto.internal.{Bn254Ops, BytesOps, HashToCurve, Native}
  *    BLSSignature:       1 byte kind tag + 64 bytes G2 = 65 bytes
  *    ProofOfPossession:  65 bytes (same shape as BLSSignature)
  */
+@deprecated(
+  "BLS over BN254 is quantum-vulnerable per constitution v2.0.0 " +
+  "Principle I (BN254 pairing's co-CDH is breakable by Shor). " +
+  "Use siida.crypto.api.PqSignature (ML-DSA-65, FIPS 204) for new " +
+  "code; this object will be removed in a future spec once all " +
+  "callers have migrated.",
+  "v2.0.0",
+)
 object BLS:
 
   enum SignatureKind derives CanEqual:

@@ -23,8 +23,15 @@
 package siida.crypto.api
 
 import java.security.SecureRandom
+import scala.annotation.nowarn
 import munit.FunSuite
 
+// BLSSuite intentionally exercises the deprecated `siida.crypto.api.BLS`
+// object — spec 013-pq-bls-replacement marked it @deprecated as part
+// of the PQ migration. The suite's purpose is to keep classical BLS
+// regression-tested through the migration window; the deprecation
+// warnings are expected, not noise.
+@nowarn("cat=deprecation")
 final class BLSSuite extends FunSuite:
 
   private def fixedRng(label: String): SecureRandom =
