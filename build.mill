@@ -223,6 +223,11 @@ object modules extends Module {
     }
   }
   object async extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 009-async-delivery: depends on modules.mixnet for the
+    // MailboxEnvelope opaque type.
+    override def moduleDeps = Seq(modules.crypto, modules.mixnet)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet)
+    }
   }
 }
