@@ -189,7 +189,13 @@ object modules extends Module {
     }
   }
   object pkg extends SiidaModule {
-    object test extends SiidaTests
+    // Per-spec 005-pkg-keybootstrap: depends on modules.crypto for
+    // HybridOnion / PqSignature / MultiSignedEntry / IdentityEncryption,
+    // and modules.mixnet for the reserved-mailbox-id constants.
+    override def moduleDeps = Seq(modules.crypto, modules.mixnet)
+    object test extends SiidaTests {
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet)
+    }
   }
   object configchain extends SiidaModule {
     object test extends SiidaTests

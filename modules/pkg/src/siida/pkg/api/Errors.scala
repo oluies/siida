@@ -20,11 +20,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package siida.pkg
+package siida.pkg.api
 
-import munit.FunSuite
-
-final class PlaceholderSuite extends FunSuite:
-  test("Placeholder.name is the module name") {
-    assertEquals(Placeholder.name, "pkg")
-  }
+/** Typed errors returned by the PKG public API. */
+enum PkgError derives CanEqual:
+  case EmptyRoster
+  case InvalidThreshold(threshold: Int, rosterSize: Int)
+  case RosterKeyMismatch(have: Int, expected: Int)
+  case IdentityAlreadyExists
+  case MailboxIdExhausted
