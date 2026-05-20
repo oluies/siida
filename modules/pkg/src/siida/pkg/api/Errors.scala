@@ -29,3 +29,15 @@ enum PkgError derives CanEqual:
   case RosterKeyMismatch(have: Int, expected: Int)
   case IdentityAlreadyExists
   case MailboxIdExhausted
+
+/** Typed errors returned by the Friendship public API (spec
+ *  019-friend-discovery). All per-call failures are typed; no
+ *  throws on per-call paths.
+ */
+enum FriendshipError derives CanEqual:
+  case InvalidLength
+  case UnsupportedAlgorithm
+  case DecryptionFailed
+  case MalformedRequest(reason: String)
+  case IdentityNotInDirectory
+  case IdentityMismatch

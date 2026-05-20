@@ -110,6 +110,7 @@ commands to produce them.
 | 016 | `audit-pq-conformance` | Verify Bouncy Castle's ML-KEM-768 and ML-DSA-65 match FIPS 203 / 204 byte-for-byte against NIST ACVP vectors. Diagnostic-only; produces a conformance report + CI-enforced audit suite that catches regressions on future BC bumps. |
 | 017 | `bc-version-bump` | Bump `bcprov-jdk18on` 1.78.1 → 1.84 to close the FIPS 203 / 204 conformance gap surfaced by 016. Audit suite verifies the result; baseline constants update; report appended. Small, mechanical, gated by 016. |
 | 018 | `observability` (sketched) | OpenTelemetry, ops dashboards. Bumped from 017 by the bc-version-bump insertion. |
+| 019 | `friend-discovery` | Alpenhorn-style add-request primitive (alice → bob). MVP shipped 2026-05-20: `Friendship.{buildAddRequest, processAddRequest, verifyAddRequest}` + in-memory `FriendStore`. Mixnet routing, add-response, friendship-key dial tokens, persistent store, and revocation are deferred to follow-up specs. |
 
 ## Build
 
