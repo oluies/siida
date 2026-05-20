@@ -13,16 +13,24 @@ offset                size      field
 ─────────────────────  ────────  ────────────────────────────────────
 0                     1         FormatVersion (0x01)
 1                     2         signature count `n` (uint16 big-endian)
-3                     n × 3296  signature tuples: each =
+3                     n × 3312  signature tuples: each =
                                   2-byte signer_index (uint16 BE) +
-                                  3294-byte PqSignature wire envelope
-3 + n×3296            32        SHA3-256(payload)
-3 + n×3296 + 32       *         payload bytes (opaque; 006 defines)
+                                  3310-byte PqSignature wire envelope
+3 + n×3312            32        SHA3-256(payload)
+3 + n×3312 + 32       *         payload bytes (opaque; 006 defines)
 ```
 
-**Total bytes** = `35 + n × 3296 + |payload|`.
+**Total bytes** = `35 + n × 3312 + |payload|`.
 
-For n = 8: `35 + 26,368 + |payload| ≈ 26.4 KB + |payload|`.
+For n = 8: `35 + 26,496 + |payload| ≈ 26.5 KB + |payload|`.
+
+> **Note on actual signature size**: FIPS 204 Table 1 gives ML-DSA-65
+> signatures as 3309 bytes (NOT 3293 as earlier draft tables of this
+> contract stated). The PqSignature wire envelope from spec 013 is
+> therefore `1 + 3309 = 3310` bytes, and the per-tuple wire size is
+> `2 + 3310 = 3312` bytes. The implementation in
+> `MultiSignedEntry.scala` exports the constant `TupleWireBytes = 3312`
+> for downstream consumers.
 
 ## Field semantics
 
@@ -45,13 +53,13 @@ Values 0–65535. The empty case (n = 0) is permitted in the wire
 format but `verify` will return `ThresholdNotMet(0, threshold)`
 for it.
 
-### Signature tuples (n × 3296 bytes each)
+### Signature tuples (n × 3312 bytes each)
 
 Each tuple is:
 
 ```
 2 bytes    signer_index (uint16 big-endian) — index into the roster
-3294 bytes PqSignature wire envelope (1-byte alg ID + 3293-byte
+3310 bytes PqSignature wire envelope (1-byte alg ID + 3309-byte
            ML-DSA-65 signature) per spec 013's wire format
 ```
 
@@ -124,7 +132,7 @@ count the valid ones for the `ThresholdNotMet` accurate count.
 | Format | 8-signer entry size | Note |
 |---|---|---|
 | Classical BLS aggregate (Vuvuzela / Alpenhorn) | 32 + 65 + payload | Single aggregate sig + roster manifest |
-| 014 per-signer ML-DSA | 35 + 26,368 + payload | Linear in N; trade for PQ security |
+| 014 per-signer ML-DSA | 35 + 26,496 + payload | Linear in N; trade for PQ security |
 
 The ~400× size growth is acceptable for governance traffic
 (config updates are infrequent). If real-world deployment shows
