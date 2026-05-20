@@ -196,6 +196,11 @@ calls; the privacy-property regression is contained.
 - **FR-009**: Test fixtures MUST be deterministic.
 - **FR-010**: API surface stability (same FR-010 pattern as
   002/012/013/014).
+- **FR-011** *(security-review hardening)*: Algorithm-ID rejection
+  on `IdentityCiphertext` deserialisation MUST be uniform per the
+  same constant-timing / no-variance discipline as 013 FR-013 and
+  014 FR-012. The error message MUST NOT reveal which algorithm
+  IDs the implementation supports.
 
 ## Success Criteria *(mandatory)*
 
