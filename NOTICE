@@ -47,6 +47,14 @@ Third-party dependencies (introduced in spec 002-crypto-pairing):
     Dual-licensed under the Apache Licence 2.0 and LGPL 2.1+;
     Siida uses JNA under the Apache Licence 2.0.
 
+    Bouncy Castle (PQ provider — ML-KEM-768, x25519, SHA3-256,
+    ChaCha20-Poly1305)
+    Copyright (c) 2000 - 2024 The Legion of the Bouncy Castle Inc.
+    https://www.bouncycastle.org
+    Licensed under an adaptation of the MIT X11 Licence.
+    Used by spec 012-pq-mixnet-onion-layer for the post-quantum
+    hybrid onion-layer construction.
+
 Native binaries shipped under modules/crypto/native/<triple>/ are
 produced from gnark-crypto sources via cgo -buildmode=c-shared by the
 Siida project's CI matrix; the binaries are distributed under the
