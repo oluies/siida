@@ -160,9 +160,13 @@ object modules extends Module {
   object crypto extends SiidaModule {
     // Per-spec 002-crypto-pairing: add JNA for the FFI to the native
     // BN254 shim under modules/crypto/native/<triple>/.
+    // Per-spec 012-pq-mixnet-onion-layer: add Bouncy Castle PQ provider
+    // for ML-KEM-768 + x25519 + SHA3-256 + ChaCha20-Poly1305 (pure-Java,
+    // MIT-licensed, NIST CAVP-validated; research R8).
     override def ivyDeps = T {
       super.ivyDeps() ++ Agg(
         ivy"net.java.dev.jna:jna:5.18.1",
+        ivy"org.bouncycastle:bcprov-jdk18on:1.78.1",
       )
     }
 

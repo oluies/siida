@@ -53,6 +53,19 @@ enum BN254Error derives CanEqual:
   case InvalidLength
   case Internal(reason: String)
 
+/** Typed errors returned by the HybridOnion public API (spec
+ *  012-pq-mixnet-onion-layer). DecapsulationFailed is intentionally
+ *  uniform (no information about which side of the hybrid failed)
+ *  per FR-006.
+ */
+enum HybridOnionError derives CanEqual:
+  case IncompleteBundle
+  case UnsupportedAlgorithm
+  case InvalidPoint
+  case InvalidLength
+  case DecapsulationFailed
+  case MalformedCiphertext(reason: String)
+
 /** Exception raised at JVM startup when the native shim cannot be
  *  loaded. Distinct from BN254Error because the failure mode is
  *  programming-environment, not per-call. See
