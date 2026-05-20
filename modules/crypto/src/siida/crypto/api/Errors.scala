@@ -76,6 +76,42 @@ enum PqSignatureError derives CanEqual:
   case MalformedKey
   case MalformedSignature
 
+/** Typed errors returned by the MultiSignedEntry public API (spec
+ *  014-pq-config-chain-redesign).
+ */
+enum MultiSignedEntryError derives CanEqual:
+  case InvalidLength
+  case UnsupportedVersion
+  case DuplicateSignerIndex(index: Int)
+  case InvalidSignatureCount(count: Int)
+  case MalformedBytes(reason: String)
+
+/** Verify-time outcome of [[siida.crypto.api.MultiSignedEntry.verify]].
+ *  Spec 014 contract. Distinct from `MultiSignedEntryError` because
+ *  these aren't deserialisation failures — they're cryptographic /
+ *  policy outcomes.
+ */
+enum VerifyResult derives CanEqual:
+  case Valid
+  case ThresholdNotMet(validCount: Int, required: Int)
+  case DuplicateSigner(index: Int)
+  case InvalidSignerIndex(index: Int)
+  case PayloadHashMismatch
+  case MalformedEntry(reason: String)
+
+/** Typed errors returned by the IdentityEncryption public API (spec
+ *  015-pq-identity-encryption). DecapsulationFailed and the
+ *  AlgorithmID refusals are uniform per FR-011 — no side channel
+ *  reveals which side of the failure surfaced.
+ */
+enum IdentityEncError derives CanEqual:
+  case IdentityNotFound
+  case InvalidDirectorySignature
+  case UnsupportedAlgorithm
+  case InvalidLength
+  case DecapsulationFailed
+  case MalformedCiphertext(reason: String)
+
 /** Exception raised at JVM startup when the native shim cannot be
  *  loaded. Distinct from BN254Error because the failure mode is
  *  programming-environment, not per-call. See
