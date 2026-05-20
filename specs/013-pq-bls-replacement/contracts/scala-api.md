@@ -11,7 +11,7 @@ object PqSignature:
 
   opaque type PqPrivateKey = ...   // 4032 bytes (ML-DSA-65 sk + 1-byte alg ID)
   opaque type PqPublicKey  = ...   // 1953 bytes (ML-DSA-65 pk + 1-byte alg ID)
-  opaque type Signature    = ...   // 3294 bytes (ML-DSA-65 sig + 1-byte alg ID)
+  opaque type Signature    = ...   // 3310 bytes (ML-DSA-65 sig + 1-byte alg ID)
 
   // ── Keygen ──────────────────────────────────────────────
 
@@ -73,7 +73,13 @@ enum PqSignatureError derives CanEqual:
 |---|---|---|
 | `PqPrivateKey` | 4033 bytes | 1-byte alg ID (`0x10`) + 4032-byte ML-DSA-65 sk |
 | `PqPublicKey`  | 1953 bytes | 1-byte alg ID (`0x10`) + 1952-byte ML-DSA-65 pk |
-| `Signature`    | 3294 bytes | 1-byte alg ID (`0x10`) + 3293-byte ML-DSA-65 sig |
+| `Signature`    | 3310 bytes | 1-byte alg ID (`0x10`) + 3309-byte ML-DSA-65 sig |
+
+> **Source-of-truth note**: FIPS 204 Table 1 gives the ML-DSA-65
+> signature as 3309 bytes (the figures 3293/3294 in earlier drafts
+> were a documentation error). The implementation in
+> `PqSignature.scala` exports `SignatureBytes = 3309` and the wire
+> envelope is therefore 3310 bytes.
 
 Each carries the algorithm ID so a future cutover to ML-DSA-87 or
 SLH-DSA is detectable per-message.

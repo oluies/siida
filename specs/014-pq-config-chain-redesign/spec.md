@@ -26,7 +26,7 @@ authored against a PQ-clean foundation rather than retrofitted.
 
 The redesign trades storage for security: an M-of-N entry now
 carries N (signer_index, signature) tuples instead of one aggregated
-signature. With ML-DSA-65 (3294-byte signatures from 013) and a
+signature. With ML-DSA-65 (3310-byte signature wire envelopes from 013) and a
 realistic N = 8, an entry is ~26 KB of signatures plus the entry
 payload itself. Acceptable because config updates are infrequent
 (governance traffic, not round-aligned).
@@ -97,8 +97,8 @@ A config-entry on the wire carries:
 - payload bytes (opaque to 014; spec 006 defines payload shape)
 - 1-byte version tag (allows future entry-format bumps)
 - 1-byte signature count `n`
-- `n` × `(2-byte signer_index, 3294-byte ML-DSA-65 signature)`
-  tuples = ~26 KB per 8-signer entry
+- `n` × `(2-byte signer_index, 3310-byte ML-DSA-65 signature wire envelope)`
+  tuples = ~26.5 KB per 8-signer entry
 - 32-byte SHA3-256 hash of the payload, included in what each
   signer signs (so verification doesn't require the verifier to
   serialise the payload identically — it just hashes once and
@@ -196,8 +196,9 @@ wire format and applies the US1/US2 predicate.
   a typical developer laptop (driven by `batchVerify` cost: 8
   ML-DSA sigs at ~0.6n = ~5 verifications worth of work).
 - **SC-002**: Wire-format size for an 8-signer entry is
-  approximately `1 + 1 + 8 × (2 + 3294) + 32 ≈ 26,402 bytes` plus
-  the payload itself. Documented in `contracts/wire-format.md`.
+  approximately `1 + 2 + 8 × (2 + 3310) + 32 ≈ 26,531 bytes` plus
+  the payload itself (using `n` as uint16-BE per the contract).
+  Documented in `contracts/wire-format.md`.
 - **SC-003**: Every edge-case path from the spec (US1 acceptance
   scenarios 1-4, threshold variations, duplicate signer, invalid
   index, hash mismatch, empty list) has a deterministic test

@@ -140,7 +140,7 @@ any one tuple with a forgery flips the result to `false`.
   signatures are a future spec if needed).
 - **FR-003**: Signature wire format MUST carry algorithm ID `0x10`
   as its FIRST byte; the remaining bytes are the ML-DSA-65 signature
-  (3293 bytes for parameter set 3). Total: 3294 bytes.
+  (3309 bytes for parameter set 3, per FIPS 204 Table 1). Total: 3310 bytes.
 - **FR-004**: Public key wire format MUST be the raw ML-DSA-65
   encoded public key (1952 bytes) preceded by 1-byte algorithm ID
   `0x10`. Total: 1953 bytes.
@@ -201,9 +201,9 @@ any one tuple with a forgery flips the result to `false`.
   is conservative compared to BLS aggregation.)
 - **SC-004**: One ML-DSA-65 sign completes in under 50 ms on a
   typical developer laptop; one verify in under 50 ms.
-- **SC-005**: Signature wire-format size is exactly 3294 bytes
-  (1-byte alg ID + 3293-byte ML-DSA sig). Public-key wire-format
-  size is exactly 1953 bytes.
+- **SC-005**: Signature wire-format size is exactly 3310 bytes
+  (1-byte alg ID + 3309-byte ML-DSA sig per FIPS 204 Table 1).
+  Public-key wire-format size is exactly 1953 bytes.
 - **SC-006**: A reviewer can confirm the absence of an
   `aggregate` method on `PqSignature` in under 30 seconds by
   reading the contract doc.
