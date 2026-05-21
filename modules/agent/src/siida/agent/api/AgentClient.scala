@@ -106,14 +106,15 @@ object AgentClient:
     ): Either[SdkError, AgentIncoming] =
       siida.deliver(envelopeBytes).map {
         case SiidaClient.IncomingMessage.ChatMessage(payload) =>
-          AgentEnvelope.decode(payload) match
-            case None => AgentIncoming.RawChat(payload)
-            case Some(d) =>
-              d.kind match
-                case AgentEnvelope.Kind.Request      => AgentIncoming.Request(d.requestId, d.content)
-                case AgentEnvelope.Kind.Response     => AgentIncoming.Response(d.requestId, d.content)
-                case AgentEnvelope.Kind.Notification => AgentIncoming.Notification(d.content)
-                case _                               => AgentIncoming.RawChat(payload)
+          decodeAgent(payload)
+        case SiidaClient.IncomingMessage.AuthenticatedChat(_, payload) =>
+          // Spec 023: the SDK already gives us the sender identity,
+          // but the agent layer's typed surface doesn't currently
+          // expose a sender field. Decode the agent envelope from
+          // the payload bytes; if not SIAG, surface as RawChat.
+          // Agents that need the sender go through SiidaClient.deliver
+          // directly.
+          decodeAgent(payload)
         case SiidaClient.IncomingMessage.AddRequest(_) =>
           // Add-requests are surfaced at the SDK level, not the agent
           // convention; we still surface them by wrapping in a
@@ -121,6 +122,16 @@ object AgentClient:
           // on the SDK delivery instead if it cares about add-requests.
           AgentIncoming.RawChat(Array.emptyByteArray)
       }
+
+    private def decodeAgent(payload: Array[Byte]): AgentIncoming =
+      AgentEnvelope.decode(payload) match
+        case None => AgentIncoming.RawChat(payload)
+        case Some(d) =>
+          d.kind match
+            case AgentEnvelope.Kind.Request      => AgentIncoming.Request(d.requestId, d.content)
+            case AgentEnvelope.Kind.Response     => AgentIncoming.Response(d.requestId, d.content)
+            case AgentEnvelope.Kind.Notification => AgentIncoming.Notification(d.content)
+            case _                               => AgentIncoming.RawChat(payload)
 
     private def newRequestId(rng: SecureRandom): Array[Byte] =
       val out = new Array[Byte](AgentEnvelope.RequestIdBytes)

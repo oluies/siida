@@ -106,7 +106,9 @@ object ChatSession:
       lookup(alias) match
         case None => Left(SessionError.UnknownFriend(alias))
         case Some((idBytes, _)) =>
-          siida.sendChatMessage(idBytes, text.getBytes("UTF-8"), rng) match
+          // Per spec 023: use the authenticated chat path so receivers
+          // can resolve the sender alias from the wire.
+          siida.sendAuthenticatedChatMessage(idBytes, text.getBytes("UTF-8"), rng) match
             case Right(onion) =>
               log += ChatLine.Outbound(alias, text)
               Right(onion)
@@ -116,15 +118,19 @@ object ChatSession:
       siida.deliver(envelopeBytes) match
         case Left(e) => Left(sdkErrToSession(e))
         case Right(SiidaClient.IncomingMessage.ChatMessage(payload)) =>
+          // Plain (unauthenticated) chat — no sender on the wire.
+          // Surface with "?" alias per the spec-010 contract.
           val text = new String(payload, "UTF-8")
-          // The chat message doesn't carry the sender's identity at
-          // the SDK level — it's only the addressed mailbox + the
-          // payload. The session can't resolve a sender alias from
-          // the wire alone. The friend-discovery / add-request flow
-          // is where senders prove identity; in the MVP we surface
-          // chat with a placeholder "?" alias unless the calling
-          // layer routes the inbound to an expected sender.
           val line: ChatLine.Inbound = ChatLine.Inbound("?", text)
+          log += line
+          Right(InboundEvent.Chat(line))
+        case Right(SiidaClient.IncomingMessage.AuthenticatedChat(senderId, payload)) =>
+          // Spec 023: resolve sender alias via FriendStore reverse-lookup.
+          val text  = new String(payload, "UTF-8")
+          val alias = friendStore.lookup(senderId) match
+            case Some(_) => new String(senderId, "UTF-8")
+            case None    => "?"
+          val line: ChatLine.Inbound = ChatLine.Inbound(alias, text)
           log += line
           Right(InboundEvent.Chat(line))
         case Right(SiidaClient.IncomingMessage.AddRequest(content)) =>
