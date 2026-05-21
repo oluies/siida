@@ -234,15 +234,18 @@ object modules extends Module {
     // Per-spec 022-otel-exporter: bridge `Telemetry` to a caller-
     // supplied `io.opentelemetry.api.metrics.Meter` with a privacy
     // allowlist applied at the exporter boundary.
+    // Per-spec 025-otlp-setup: ship the SDK + OTLP/HTTP exporter so
+    // operators get one-call wiring via `OtelSetup.otlpHttp(...)`.
     override def ivyDeps = T {
       super.ivyDeps() ++ Agg(
         ivy"io.opentelemetry:opentelemetry-api:1.43.0",
+        ivy"io.opentelemetry:opentelemetry-sdk:1.43.0",
+        ivy"io.opentelemetry:opentelemetry-exporter-otlp:1.43.0",
       )
     }
     object test extends SiidaTests {
       override def ivyDeps = T {
         super.ivyDeps() ++ Agg(
-          ivy"io.opentelemetry:opentelemetry-sdk:1.43.0",
           ivy"io.opentelemetry:opentelemetry-sdk-testing:1.43.0",
         )
       }
