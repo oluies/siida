@@ -45,8 +45,9 @@ package siida.sdk.api
 object SdkEnvelope:
 
   object Type:
-    val ChatMessage: Byte = 0x01.toByte
-    val AddRequest:  Byte = 0x02.toByte
+    val ChatMessage:       Byte = 0x01.toByte
+    val AddRequest:        Byte = 0x02.toByte
+    val AuthenticatedChat: Byte = 0x03.toByte
 
   def wrap(typ: Byte, inner: Array[Byte]): Array[Byte] =
     val out = new Array[Byte](1 + inner.length)

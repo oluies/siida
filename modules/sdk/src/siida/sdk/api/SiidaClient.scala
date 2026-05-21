@@ -58,6 +58,18 @@ trait SiidaClient:
     rng:               SecureRandom,
   ): Either[SdkError, HybridOnion.OnionLayer]
 
+  /** Build a layered submission carrying an authenticated chat
+   *  message (spec 023). Inner payload is
+   *  `(2B sender_id_len, sender_id_bytes, chat_payload)`, e2e-
+   *  encrypted to the recipient's bundle. The receiver gets the
+   *  sender's identity bytes back via `IncomingMessage.AuthenticatedChat`.
+   */
+  def sendAuthenticatedChatMessage(
+    recipientIdentity: Array[Byte],
+    payload:           Array[Byte],
+    rng:               SecureRandom,
+  ): Either[SdkError, HybridOnion.OnionLayer]
+
   /** Build a layered submission carrying an Alpenhorn add-request to
    *  `recipientIdentity`. The add-request's content is THIS client's
    *  identity + public bundle, end-to-end encrypted via the spec 019
@@ -91,6 +103,11 @@ object SiidaClient:
   enum IncomingMessage derives CanEqual:
     case ChatMessage(payload: Array[Byte])
     case AddRequest(content: Friendship.AddRequestContent)
+    /** Spec 023: authenticated chat. `senderIdentity` is the sender's
+     *  identity bytes as transcribed from the wire (NOT verified
+     *  cryptographically here — see spec for the trust model).
+     */
+    case AuthenticatedChat(senderIdentity: Array[Byte], payload: Array[Byte])
 
   /** Build a local-composition client. No network transport —
    *  callers feed the produced OnionLayer to the mixnet round
@@ -153,6 +170,24 @@ object SiidaClient:
         MixChain.layeredSubmission(mixChain, env, rng)
       }
 
+    def sendAuthenticatedChatMessage(
+      recipientIdentity: Array[Byte],
+      payload:           Array[Byte],
+      rng:               SecureRandom,
+    ): Either[SdkError, HybridOnion.OnionLayer] =
+      catalog.lookup(recipientIdentity).map { peer =>
+        // 1. Build the inner-payload (sender identity + chat)
+        val authPayload = AuthenticatedChatWire.encode(identityBytes, payload)
+        // 2. End-to-end encrypt to the recipient's bundle
+        val e2e = HybridOnion.encrypt(peer.publicBundle, authPayload, rng)
+        val inner = HybridOnion.serialiseLayer(e2e)
+        // 3. SDK-wrap with the new type byte
+        val sdkPayload = SdkEnvelope.wrap(SdkEnvelope.Type.AuthenticatedChat, inner)
+        // 4. MailboxEnvelope + layered submission
+        val env = MixChain.envelope(peer.mailboxId, sdkPayload)
+        MixChain.layeredSubmission(mixChain, env, rng)
+      }
+
     def sendAddRequest(
       recipientIdentity: Array[Byte],
       rng:               SecureRandom,
@@ -191,6 +226,8 @@ object SiidaClient:
               decryptChat(inner)
             else if typ == SdkEnvelope.Type.AddRequest then
               processAddRequest(inner)
+            else if typ == SdkEnvelope.Type.AuthenticatedChat then
+              decryptAuthenticatedChat(inner)
             else
               Left(SdkError.UnsupportedSdkType)
           }
@@ -200,6 +237,15 @@ object SiidaClient:
       HybridOnion.deserialiseLayer(layerBytes).left.map(toSdk).flatMap { layer =>
         HybridOnion.decrypt(secretBundle, layer).left.map(toSdk).map { plaintext =>
           IncomingMessage.ChatMessage(plaintext)
+        }
+      }
+
+    private def decryptAuthenticatedChat(layerBytes: Array[Byte]): Either[SdkError, IncomingMessage] =
+      HybridOnion.deserialiseLayer(layerBytes).left.map(toSdk).flatMap { layer =>
+        HybridOnion.decrypt(secretBundle, layer).left.map(toSdk).flatMap { plaintext =>
+          AuthenticatedChatWire.decode(plaintext).map { case (senderId, payload) =>
+            IncomingMessage.AuthenticatedChat(senderId, payload)
+          }
         }
       }
 
