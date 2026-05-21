@@ -23,9 +23,9 @@
 package siida.core.api
 
 import java.security.SecureRandom
-import siida.crypto.api.HybridOnion
+import siida.crypto.api.{HybridOnion, PqSignature}
 import siida.pkg.api.{Friendship, FriendStore}
-import siida.sdk.api.{SdkError, SiidaClient}
+import siida.sdk.api.{SdkError, SiidaClient, SignedChatWire}
 
 /** Headless chat-session model (spec 010 MVP). Aggregates a
  *  `SiidaClient` and a `FriendStore` into a single object UI
@@ -71,6 +71,7 @@ object ChatSession:
     case DecryptionFailed
     case MalformedEnvelope(reason: String)
     case UnsupportedSdkType
+    case SignatureFailed
     case SdkError(reason: String)
 
   enum ChatLine derives CanEqual:
@@ -106,9 +107,15 @@ object ChatSession:
       lookup(alias) match
         case None => Left(SessionError.UnknownFriend(alias))
         case Some((idBytes, _)) =>
-          // Per spec 023: use the authenticated chat path so receivers
-          // can resolve the sender alias from the wire.
-          siida.sendAuthenticatedChatMessage(idBytes, text.getBytes("UTF-8"), rng) match
+          // Spec 027: use the signed path when the SDK was built with
+          // a signing key; otherwise fall back to spec 023's
+          // authenticated path.
+          val send =
+            if siida.hasSigningKey then
+              siida.sendSignedChatMessage(idBytes, text.getBytes("UTF-8"), rng)
+            else
+              siida.sendAuthenticatedChatMessage(idBytes, text.getBytes("UTF-8"), rng)
+          send match
             case Right(onion) =>
               log += ChatLine.Outbound(alias, text)
               Right(onion)
@@ -133,6 +140,34 @@ object ChatSession:
           val line: ChatLine.Inbound = ChatLine.Inbound(alias, text)
           log += line
           Right(InboundEvent.Chat(line))
+        case Right(SiidaClient.IncomingMessage.SignedChat(senderId, payload, sigBytes)) =>
+          // Spec 027: verify the signature against the sender's
+          // signing key in the FriendStore. Missing key → surface as
+          // unverified; verification failure → SignatureFailed.
+          val text = new String(payload, "UTF-8")
+          friendStore.lookupSigningKey(senderId) match
+            case None =>
+              // No signing key on file — surface as unverified so
+              // the UI can warn the user (and prompt a re-add).
+              val alias = friendStore.lookup(senderId) match
+                case Some(_) => "?[unverified]"
+                case None    => "?[unverified]"
+              val line: ChatLine.Inbound = ChatLine.Inbound(alias, text)
+              log += line
+              Right(InboundEvent.Chat(line))
+            case Some(sigPk) =>
+              val signedMsg = SignedChatWire.signedMessage(senderId, siida.identity, payload)
+              val ok = PqSignature.deserialiseSignature(sigBytes) match
+                case Left(_)    => false
+                case Right(sig) => PqSignature.verify(sigPk, signedMsg, sig)
+              if !ok then Left(SessionError.SignatureFailed)
+              else
+                val alias = friendStore.lookup(senderId) match
+                  case Some(_) => new String(senderId, "UTF-8")
+                  case None    => "?"
+                val line: ChatLine.Inbound = ChatLine.Inbound(alias, text)
+                log += line
+                Right(InboundEvent.Chat(line))
         case Right(SiidaClient.IncomingMessage.AddRequest(content)) =>
           Right(InboundEvent.AddRequest(content.senderIdentity))
 
@@ -152,6 +187,7 @@ object ChatSession:
       case SdkError.UnsupportedSdkType           => SessionError.UnsupportedSdkType
       case SdkError.MalformedEnvelope(r)         => SessionError.MalformedEnvelope(r)
       case SdkError.AddRequestVerificationFailed => SessionError.SdkError("add-request verification failed")
+      case SdkError.SigningKeyMissing            => SessionError.SdkError("signing key missing")
       case SdkError.BadDirectoryProof            => SessionError.SdkError("bad directory proof")
       case SdkError.InternalError(r)             => SessionError.SdkError(r)
 

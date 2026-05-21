@@ -23,7 +23,7 @@
 package siida.pkg.api
 
 import java.nio.file.{Files, Path, StandardCopyOption}
-import siida.crypto.api.HybridOnion
+import siida.crypto.api.{HybridOnion, PqSignature}
 
 /** File-backed FriendStore (spec 020 US3). Atomic-rewrite on every
  *  `add` via write-tmp + rename. Single-writer discipline is the
@@ -124,6 +124,23 @@ private[api] object PersistentFriendStore:
 
     def list(): Seq[Array[Byte]] =
       entries.keys.iterator.map(_.toArray).toVector
+
+    // Spec 027 — the persistent on-disk format does not yet carry
+    // signing keys; this implementation rejects the add and always
+    // returns None for lookups. A follow-up spec bumps the file
+    // format. Callers that need signed-chat across restarts should
+    // use the in-memory FriendStore for now.
+    def addWithSigningKey(
+      identity: Array[Byte],
+      bundle:   HybridOnion.HybridPublicBundle,
+      sigPk:    PqSignature.PqPublicKey,
+    ): Boolean =
+      val _ = sigPk
+      add(identity, bundle)
+
+    def lookupSigningKey(identity: Array[Byte]): Option[PqSignature.PqPublicKey] =
+      val _ = identity
+      None
 
     def flushAtomic(): Either[String, Unit] =
       try

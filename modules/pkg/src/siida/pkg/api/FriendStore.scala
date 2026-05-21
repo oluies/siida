@@ -22,7 +22,7 @@
 
 package siida.pkg.api
 
-import siida.crypto.api.HybridOnion
+import siida.crypto.api.{HybridOnion, PqSignature}
 
 /** Local cache of accepted friend identities → their public
  *  bundles. The SDK (spec 007) consults this before falling
@@ -49,6 +49,26 @@ trait FriendStore:
    *  insertion order (LinkedHashMap-backed).
    */
   def list(): Seq[Array[Byte]]
+
+  /** Spec 027: register a friend together with the signing key used
+   *  to verify their signed-chat envelopes. Returns false if the
+   *  identity is already present; in that case the existing entry
+   *  is left untouched (idempotent re-add).
+   */
+  def addWithSigningKey(
+    identity: Array[Byte],
+    bundle:   HybridOnion.HybridPublicBundle,
+    sigPk:    PqSignature.PqPublicKey,
+  ): Boolean
+
+  /** Spec 027: look up the signing key for a registered friend.
+   *  Returns `None` if the identity is unknown OR if the entry
+   *  was added without a signing key (e.g. via the legacy
+   *  `add(identity, bundle)` path, or by the persistent
+   *  FriendStore — its on-disk format does not yet carry
+   *  signing keys).
+   */
+  def lookupSigningKey(identity: Array[Byte]): Option[PqSignature.PqPublicKey]
 
 
 object FriendStore:
@@ -86,6 +106,12 @@ object FriendStore:
         HybridOnion.HybridPublicBundle,
       ]
 
+    private val signingKeys =
+      scala.collection.mutable.HashMap.empty[
+        scala.collection.immutable.ArraySeq[Byte],
+        PqSignature.PqPublicKey,
+      ]
+
     def add(identity: Array[Byte], bundle: HybridOnion.HybridPublicBundle): Boolean =
       val key = scala.collection.immutable.ArraySeq.unsafeWrapArray(identity.clone())
       if entries.contains(key) then false
@@ -93,9 +119,25 @@ object FriendStore:
         entries.update(key, bundle)
         true
 
+    def addWithSigningKey(
+      identity: Array[Byte],
+      bundle:   HybridOnion.HybridPublicBundle,
+      sigPk:    PqSignature.PqPublicKey,
+    ): Boolean =
+      val key = scala.collection.immutable.ArraySeq.unsafeWrapArray(identity.clone())
+      if entries.contains(key) then false
+      else
+        entries.update(key, bundle)
+        signingKeys.update(key, sigPk)
+        true
+
     def lookup(identity: Array[Byte]): Option[HybridOnion.HybridPublicBundle] =
       val key = scala.collection.immutable.ArraySeq.unsafeWrapArray(identity)
       entries.get(key)
+
+    def lookupSigningKey(identity: Array[Byte]): Option[PqSignature.PqPublicKey] =
+      val key = scala.collection.immutable.ArraySeq.unsafeWrapArray(identity)
+      signingKeys.get(key)
 
     def list(): Seq[Array[Byte]] =
       entries.keys.iterator.map(_.toArray).toVector
