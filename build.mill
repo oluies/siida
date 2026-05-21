@@ -231,8 +231,22 @@ object modules extends Module {
   }
   object observability extends SiidaModule {
     // Per-spec 018-observability: in-process telemetry abstraction.
-    // No external deps (OTEL etc. land in a follow-up).
-    object test extends SiidaTests
+    // Per-spec 022-otel-exporter: bridge `Telemetry` to a caller-
+    // supplied `io.opentelemetry.api.metrics.Meter` with a privacy
+    // allowlist applied at the exporter boundary.
+    override def ivyDeps = T {
+      super.ivyDeps() ++ Agg(
+        ivy"io.opentelemetry:opentelemetry-api:1.43.0",
+      )
+    }
+    object test extends SiidaTests {
+      override def ivyDeps = T {
+        super.ivyDeps() ++ Agg(
+          ivy"io.opentelemetry:opentelemetry-sdk:1.43.0",
+          ivy"io.opentelemetry:opentelemetry-sdk-testing:1.43.0",
+        )
+      }
+    }
   }
   object async extends SiidaModule {
     // Per-spec 009-async-delivery: depends on modules.mixnet for the
