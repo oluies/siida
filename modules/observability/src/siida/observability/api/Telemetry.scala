@@ -64,6 +64,26 @@ object Telemetry:
    */
   def inMemory(): Telemetry = new InMemoryTelemetry()
 
+  /** OpenTelemetry-bridge telemetry (spec 022). Delegates each
+   *  recording to a caller-supplied `Meter`, gated by a privacy
+   *  allowlist applied at the exporter boundary.
+   *
+   *  See [[OtelTelemetry.SafeDefaults]] for the conservative
+   *  default allowlist (constitution-compatible "aggregate
+   *  counters bucketed at the round level").
+   *
+   *  Metric names ending in `*` in the allowlist match by prefix
+   *  (e.g. `mixnet.round.drops_per_mixer.*` matches
+   *  `mixnet.round.drops_per_mixer.0`). All other names are
+   *  silently discarded — the OTEL sink only sees what the
+   *  caller has explicitly opted in.
+   */
+  def otel(
+    meter:          io.opentelemetry.api.metrics.Meter,
+    allowedMetrics: Set[String],
+  ): Telemetry =
+    new OtelTelemetry(meter, allowedMetrics)
+
   private final class InMemoryTelemetry extends Telemetry:
     private val counters   = scala.collection.mutable.HashMap.empty[String, Long]
     private val gauges     = scala.collection.mutable.HashMap.empty[String, Double]
