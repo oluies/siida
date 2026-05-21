@@ -23,7 +23,7 @@
 package siida.sdk.api
 
 import java.security.SecureRandom
-import siida.crypto.api.{HybridOnion, HybridOnionError}
+import siida.crypto.api.{HybridOnion, HybridOnionError, PqSignature}
 import siida.mixnet.api.MixChain
 import siida.pkg.api.{Friendship, FriendshipError}
 
@@ -70,6 +70,25 @@ trait SiidaClient:
     rng:               SecureRandom,
   ): Either[SdkError, HybridOnion.OnionLayer]
 
+  /** Build a layered submission carrying a signed chat message
+   *  (spec 027). Requires this client to have been constructed
+   *  with a signing key; otherwise returns
+   *  `SdkError.SigningKeyMissing`. The signature is computed
+   *  over `0x04 || sender_id || recipient_id || payload`, so it
+   *  cannot be replayed across recipients.
+   */
+  def sendSignedChatMessage(
+    recipientIdentity: Array[Byte],
+    payload:           Array[Byte],
+    rng:               SecureRandom,
+  ): Either[SdkError, HybridOnion.OnionLayer]
+
+  /** True iff this client has a signing key (i.e. can produce
+   *  spec 027 signed-chat envelopes). Used by upper layers to
+   *  choose the signed path automatically when available.
+   */
+  def hasSigningKey: Boolean
+
   /** Build a layered submission carrying an Alpenhorn add-request to
    *  `recipientIdentity`. The add-request's content is THIS client's
    *  identity + public bundle, end-to-end encrypted via the spec 019
@@ -108,6 +127,13 @@ object SiidaClient:
      *  cryptographically here — see spec for the trust model).
      */
     case AuthenticatedChat(senderIdentity: Array[Byte], payload: Array[Byte])
+    /** Spec 027: signed chat. `signature` is over
+     *  `0x04 || sender_id || recipient_id || payload`. The SDK
+     *  layer does NOT verify (it doesn't know the sender's
+     *  signing public key); verification happens at the
+     *  ChatSession layer against the FriendStore.
+     */
+    case SignedChat(senderIdentity: Array[Byte], payload: Array[Byte], signature: Array[Byte])
 
   /** Build a local-composition client. No network transport —
    *  callers feed the produced OnionLayer to the mixnet round
@@ -127,6 +153,7 @@ object SiidaClient:
     myMailboxId:           Long,
     mixChainPublicBundles: Seq[HybridOnion.HybridPublicBundle],
     peerCatalog:           PeerCatalog,
+    signingKey:            Option[PqSignature.PqPrivateKey] = None,
   ): SiidaClient =
     require(mixChainPublicBundles.nonEmpty,
       "SiidaClient.create: mix chain must be non-empty")
@@ -137,6 +164,7 @@ object SiidaClient:
       myMailboxId,
       mixChainPublicBundles.toVector,
       peerCatalog,
+      signingKey,
     )
 
   private final class LocalSiidaClient(
@@ -146,10 +174,12 @@ object SiidaClient:
     private val myMailboxId_     : Long,
     private val mixChain:         Vector[HybridOnion.HybridPublicBundle],
     private val catalog:          PeerCatalog,
+    private val signingKey:       Option[PqSignature.PqPrivateKey],
   ) extends SiidaClient:
 
     def identity: Array[Byte] = identityBytes.clone()
     def mailboxId: Long       = myMailboxId_
+    def hasSigningKey: Boolean = signingKey.isDefined
 
     def sendChatMessage(
       recipientIdentity: Array[Byte],
@@ -187,6 +217,25 @@ object SiidaClient:
         val env = MixChain.envelope(peer.mailboxId, sdkPayload)
         MixChain.layeredSubmission(mixChain, env, rng)
       }
+
+    def sendSignedChatMessage(
+      recipientIdentity: Array[Byte],
+      payload:           Array[Byte],
+      rng:               SecureRandom,
+    ): Either[SdkError, HybridOnion.OnionLayer] =
+      signingKey match
+        case None     => Left(SdkError.SigningKeyMissing)
+        case Some(sk) =>
+          catalog.lookup(recipientIdentity).map { peer =>
+            val signedMsg   = SignedChatWire.signedMessage(identityBytes, recipientIdentity, payload)
+            val sig         = PqSignature.sign(sk, signedMsg)
+            val sigBytes    = PqSignature.serialiseSignature(sig)
+            val inner       = SignedChatWire.encode(identityBytes, sigBytes, payload)
+            val e2e         = HybridOnion.encrypt(peer.publicBundle, inner, rng)
+            val sdkPayload  = SdkEnvelope.wrap(SdkEnvelope.Type.SignedChat, HybridOnion.serialiseLayer(e2e))
+            val env         = MixChain.envelope(peer.mailboxId, sdkPayload)
+            MixChain.layeredSubmission(mixChain, env, rng)
+          }
 
     def sendAddRequest(
       recipientIdentity: Array[Byte],
@@ -228,6 +277,8 @@ object SiidaClient:
               processAddRequest(inner)
             else if typ == SdkEnvelope.Type.AuthenticatedChat then
               decryptAuthenticatedChat(inner)
+            else if typ == SdkEnvelope.Type.SignedChat then
+              decryptSignedChat(inner)
             else
               Left(SdkError.UnsupportedSdkType)
           }
@@ -245,6 +296,15 @@ object SiidaClient:
         HybridOnion.decrypt(secretBundle, layer).left.map(toSdk).flatMap { plaintext =>
           AuthenticatedChatWire.decode(plaintext).map { case (senderId, payload) =>
             IncomingMessage.AuthenticatedChat(senderId, payload)
+          }
+        }
+      }
+
+    private def decryptSignedChat(layerBytes: Array[Byte]): Either[SdkError, IncomingMessage] =
+      HybridOnion.deserialiseLayer(layerBytes).left.map(toSdk).flatMap { layer =>
+        HybridOnion.decrypt(secretBundle, layer).left.map(toSdk).flatMap { plaintext =>
+          SignedChatWire.decode(plaintext).map { case (senderId, sig, payload) =>
+            IncomingMessage.SignedChat(senderId, payload, sig)
           }
         }
       }

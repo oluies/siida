@@ -37,4 +37,5 @@ enum SdkError derives CanEqual:
   case DecryptionFailed
   case MalformedEnvelope(reason: String)
   case AddRequestVerificationFailed
+  case SigningKeyMissing
   case InternalError(reason: String)

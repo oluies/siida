@@ -115,6 +115,14 @@ object AgentClient:
           // Agents that need the sender go through SiidaClient.deliver
           // directly.
           decodeAgent(payload)
+        case SiidaClient.IncomingMessage.SignedChat(_, payload, _) =>
+          // Spec 027: same treatment as authenticated chat at the
+          // agent layer — decode the agent envelope from the payload.
+          // The signature itself is verified at the ChatSession layer
+          // when the caller goes through ChatSession; agents that go
+          // through SiidaClient.deliver receive the signature bytes
+          // and must verify themselves.
+          decodeAgent(payload)
         case SiidaClient.IncomingMessage.AddRequest(_) =>
           // Add-requests are surfaced at the SDK level, not the agent
           // convention; we still surface them by wrapping in a

@@ -24,7 +24,7 @@ package siida.pkg
 
 import java.security.SecureRandom
 import munit.FunSuite
-import siida.crypto.api.HybridOnion
+import siida.crypto.api.{HybridOnion, PqSignature}
 import siida.pkg.api.FriendStore
 
 /** Spec 019 — FriendStore in-memory semantics. */
@@ -86,4 +86,46 @@ final class FriendStoreSuite extends FunSuite:
     val alice2: Array[Byte] = "alice".getBytes("UTF-8")
     val found = store.lookup(alice2)
     assert(found.isDefined, "expected structural lookup to find alice")
+  }
+
+  // ── Spec 027: signing keys ────────────────────────────────────
+
+  test("addWithSigningKey → lookupSigningKey roundtrip (in-memory)") {
+    val store = FriendStore.inMemory()
+    val (_, bundle) = HybridOnion.generateBundle(fixedRng("sig-bundle"))
+    val (_, sigPk)  = PqSignature.generateKeyPair(fixedRng("sig-key"))
+    assertEquals(store.addWithSigningKey("alice".getBytes("UTF-8"), bundle, sigPk), true)
+    val found = store.lookupSigningKey("alice".getBytes("UTF-8"))
+    assert(found.isDefined, "signing key must be retrievable")
+    assertEquals(
+      PqSignature.serialisePublicKey(found.get).toSeq,
+      PqSignature.serialisePublicKey(sigPk).toSeq,
+    )
+  }
+
+  test("lookupSigningKey returns None for identity added via plain add()") {
+    val store = FriendStore.inMemory()
+    val (_, bundle) = HybridOnion.generateBundle(fixedRng("nokey"))
+    store.add("alice".getBytes("UTF-8"), bundle)
+    assertEquals(store.lookupSigningKey("alice".getBytes("UTF-8")), None)
+  }
+
+  test("lookupSigningKey returns None for unknown identity") {
+    val store = FriendStore.inMemory()
+    assertEquals(store.lookupSigningKey("ghost".getBytes("UTF-8")), None)
+  }
+
+  test("addWithSigningKey: idempotent — second add returns false, keys not overwritten") {
+    val store = FriendStore.inMemory()
+    val (_, bundle1) = HybridOnion.generateBundle(fixedRng("idem-b1"))
+    val (_, sig1)    = PqSignature.generateKeyPair(fixedRng("idem-s1"))
+    val (_, bundle2) = HybridOnion.generateBundle(fixedRng("idem-b2"))
+    val (_, sig2)    = PqSignature.generateKeyPair(fixedRng("idem-s2"))
+    assertEquals(store.addWithSigningKey("alice".getBytes("UTF-8"), bundle1, sig1), true)
+    assertEquals(store.addWithSigningKey("alice".getBytes("UTF-8"), bundle2, sig2), false)
+    val found = store.lookupSigningKey("alice".getBytes("UTF-8")).get
+    assertEquals(
+      PqSignature.serialisePublicKey(found).toSeq,
+      PqSignature.serialisePublicKey(sig1).toSeq,
+      "original signing key must be preserved on second add")
   }
