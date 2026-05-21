@@ -113,6 +113,62 @@ commands to produce them.
 | 019 | `friend-discovery` | Alpenhorn-style add-request primitive (alice → bob). MVP shipped 2026-05-20: `Friendship.{buildAddRequest, processAddRequest, verifyAddRequest}` + in-memory `FriendStore`. Mixnet routing, add-response, friendship-key dial tokens, persistent store, and revocation are deferred to follow-up specs. |
 | 020 | `friend-discovery-followups` | Add-response half (bob → alice), deterministic `Friendship.deriveFriendshipKey` (symmetric per-pair secret from public bundles + add-id; stand-in for Alpenhorn's IBE-based dial tokens removed by 015), and persistent `FriendStore` (atomic file-backed store with SIFD magic). MVP shipped 2026-05-20. Full Alpenhorn dial tokens, revocation, unfriend, and encryption-at-rest of the persistent store are deferred to follow-up specs. |
 
+> Slots 021–027 are merged on `main` but not yet captured as table
+> rows; see `specs/021-wire-telemetry/` through `specs/027-signed-chat/`
+> for individual scope and status.
+
+### Roadmap as a Wardley-style quadrant (2026-05-21)
+
+Y-axis = visibility to the end user. X-axis = evolution from
+genesis to commodity. Internal MVPs cluster in the lower-left;
+the "buy" boundary (Bouncy Castle, OpenTelemetry, Pekko) sits
+mid-right. Rendered as a mermaid `quadrantChart` so it renders
+natively on GitHub.
+
+```mermaid
+quadrantChart
+    title Siida — Roadmap (2026-05-21)
+    x-axis Genesis --> Commodity
+    y-axis Invisible infra --> User-visible
+    quadrant-1 Product / user-visible
+    quadrant-2 Bespoke / user-visible
+    quadrant-3 Bespoke / infra
+    quadrant-4 Product / infra
+    TerminalUI 026: [0.42, 0.95]
+    ChatSession 010: [0.36, 0.86]
+    AgentClient 008: [0.36, 0.82]
+    SignedChat 027: [0.30, 0.78]
+    AuthChat 023: [0.30, 0.74]
+    SiidaClient 007: [0.32, 0.66]
+    FriendDisc 019+020: [0.34, 0.62]
+    Mixnet 004: [0.38, 0.52]
+    Mailroom 009: [0.38, 0.48]
+    PKG 005: [0.36, 0.46]
+    ConfigChain 006: [0.34, 0.44]
+    Telemetry 018+021–025: [0.40, 0.40]
+    HybridOnion 012: [0.22, 0.38]
+    MLDSA 013: [0.20, 0.34]
+    IBE-IdEnc 015: [0.18, 0.32]
+    PQ-CC 014: [0.20, 0.30]
+    BN254 002: [0.16, 0.28]
+    PQ-Audit 016+017: [0.28, 0.18]
+    BouncyCastle 1.84: [0.66, 0.30]
+    OpenTelemetry 1.43: [0.62, 0.34]
+    Pekko + CE3: [0.70, 0.36]
+    Mill / Scala 3: [0.80, 0.20]
+    JDK 21 / Git: [0.92, 0.16]
+    Constitution 000: [0.28, 0.08]
+    Bootstrap 001: [0.32, 0.10]
+    Steward 003: [0.42, 0.12]
+    PQ-Roadmap 011: [0.22, 0.14]
+```
+
+The quadrant chart loses Wardley's value-chain edges (which spec
+depends on which) — for that view see the dependency lines in the
+individual spec READMEs under `specs/NNN-name/plan.md`. To view a
+true Wardley map with edges, paste the same components into
+[onlinewardleymaps.com](https://onlinewardleymaps.com).
+
 ## Build
 
 Siida is **JVM-only** as of constitution v1.0.0. The canonical bootstrap
