@@ -187,18 +187,21 @@ object modules extends Module {
   object mixnet extends SiidaModule {
     // Per-spec 004-mixnet-server: depends on modules.crypto for
     // HybridOnion (012), PqSignature (013), IdentityEncryption (015).
-    override def moduleDeps = Seq(modules.crypto)
+    // Per-spec 021-wire-telemetry: also depends on modules.observability
+    // for Telemetry call-site recording.
+    override def moduleDeps = Seq(modules.crypto, modules.observability)
     object test extends SiidaTests {
-      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto)
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.observability)
     }
   }
   object pkg extends SiidaModule {
     // Per-spec 005-pkg-keybootstrap: depends on modules.crypto for
     // HybridOnion / PqSignature / MultiSignedEntry / IdentityEncryption,
     // and modules.mixnet for the reserved-mailbox-id constants.
-    override def moduleDeps = Seq(modules.crypto, modules.mixnet)
+    // Per-spec 021-wire-telemetry: also modules.observability.
+    override def moduleDeps = Seq(modules.crypto, modules.mixnet, modules.observability)
     object test extends SiidaTests {
-      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet)
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet, modules.observability)
     }
   }
   object configchain extends SiidaModule {
@@ -234,9 +237,10 @@ object modules extends Module {
   object async extends SiidaModule {
     // Per-spec 009-async-delivery: depends on modules.mixnet for the
     // MailboxEnvelope opaque type.
-    override def moduleDeps = Seq(modules.crypto, modules.mixnet)
+    // Per-spec 021-wire-telemetry: also modules.observability.
+    override def moduleDeps = Seq(modules.crypto, modules.mixnet, modules.observability)
     object test extends SiidaTests {
-      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet)
+      override def moduleDeps = super.moduleDeps ++ Seq(modules.crypto, modules.mixnet, modules.observability)
     }
   }
 }

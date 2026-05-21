@@ -24,6 +24,7 @@ package siida.async.api
 
 import java.nio.file.{Files, Path, StandardCopyOption}
 import siida.mixnet.api.MixChain
+import siida.observability.api.Telemetry
 
 /** File-backed [[Mailroom]] (spec 009 US3). Atomic write-tmp + rename
  *  on every state-changing operation. Single-writer discipline.
@@ -43,15 +44,15 @@ private[api] object PersistentMailroom:
   private val Magic: Array[Byte] = Array(0x53.toByte, 0x49.toByte, 0x4D.toByte, 0x52.toByte) // "SIMR"
   private val Version: Byte = 0x01.toByte
 
-  def openOrCreate(path: Path, ttlMs: Long): Either[String, Mailroom] =
+  def openOrCreate(path: Path, ttlMs: Long, telemetry: Telemetry): Either[String, Mailroom] =
     if !Files.exists(path) || Files.size(path) == 0L then
-      val store = new FileBackedMailroom(path, ttlMs)
+      val store = new FileBackedMailroom(path, ttlMs, telemetry)
       store.flush() match
         case Right(_) => Right(store)
         case Left(e)  => Left(e)
-    else loadExisting(path, ttlMs)
+    else loadExisting(path, ttlMs, telemetry)
 
-  private def loadExisting(path: Path, ttlMs: Long): Either[String, Mailroom] =
+  private def loadExisting(path: Path, ttlMs: Long, telemetry: Telemetry): Either[String, Mailroom] =
     try
       val bytes = Files.readAllBytes(path)
       if bytes.length < 5 then Left("truncated header")
@@ -64,7 +65,7 @@ private[api] object PersistentMailroom:
         if !ok then Left("bad magic — not a SIMR store")
         else if bytes(4) != Version then Left(s"unsupported version: ${bytes(4)}")
         else parseRecords(bytes, 5).map { slots =>
-          new FileBackedMailroom(path, ttlMs, slots)
+          new FileBackedMailroom(path, ttlMs, telemetry, slots)
         }
     catch
       case e: Exception => Left(s"I/O failure: ${e.getMessage}")
@@ -111,20 +112,26 @@ private[api] object PersistentMailroom:
     v
 
   private final class FileBackedMailroom(
-    path:  Path,
-    ttlMs: Long,
-    seed:  scala.collection.mutable.ArrayBuffer[Mailroom.Slot] = scala.collection.mutable.ArrayBuffer.empty,
+    path:      Path,
+    ttlMs:     Long,
+    telemetry: Telemetry,
+    seed:      scala.collection.mutable.ArrayBuffer[Mailroom.Slot] = scala.collection.mutable.ArrayBuffer.empty,
   ) extends Mailroom:
 
     private val all = seed
 
     def deposit(env: MixChain.MailboxEnvelope, nowMs: Long): Boolean =
       val id = MixChain.envelopeMailboxId(env)
-      if id == MixChain.CoverMailboxId || id == MixChain.BroadcastMailboxId then false
+      if id == MixChain.CoverMailboxId || id == MixChain.BroadcastMailboxId then
+        telemetry.incrementCounter("mailroom.deposit.rejected", 1L)
+        false
       else
         all += Mailroom.Slot(env, nowMs)
         flush() match
-          case Right(_) => true
+          case Right(_) =>
+            telemetry.incrementCounter("mailroom.deposit.accepted", 1L)
+            telemetry.recordGauge("mailroom.backlog", all.length.toDouble)
+            true
           case Left(e)  =>
             all.dropRightInPlace(1)
             throw new java.io.IOException(s"Mailroom.deposit: flush failed — $e")
@@ -136,7 +143,11 @@ private[api] object PersistentMailroom:
       all.clear()
       all ++= others
       flush() match
-        case Right(_) => live.iterator.map(_.env).toVector
+        case Right(_) =>
+          val out = live.iterator.map(_.env).toVector
+          telemetry.recordHistogram("mailroom.retrieve.envelopes_returned", out.length.toDouble)
+          telemetry.recordGauge("mailroom.backlog", all.length.toDouble)
+          out
         case Left(e)  =>
           all ++= matching
           throw new java.io.IOException(s"Mailroom.retrieve: flush failed — $e")

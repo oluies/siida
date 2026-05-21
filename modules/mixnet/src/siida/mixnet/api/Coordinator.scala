@@ -24,6 +24,7 @@ package siida.mixnet.api
 
 import siida.crypto.api.HybridOnion
 import siida.mixnet.internal.Shuffle
+import siida.observability.api.Telemetry
 
 /** Run one mix round through a chain of mixers. Pure deterministic
  *  function modulo the underlying crypto primitives (FR-003):
@@ -77,6 +78,7 @@ object Coordinator:
     submissions:   Seq[HybridOnion.OnionLayer],
     chainSecrets:  Seq[HybridOnion.HybridSecretBundle],
     shuffleSeeds:  Seq[Array[Byte]],
+    telemetry:     Telemetry = Telemetry.noop,
   ): RoundResult =
     require(chainSecrets.nonEmpty, "Coordinator.runRound: empty chain")
     require(chainSecrets.length == shuffleSeeds.length,
@@ -116,6 +118,15 @@ object Coordinator:
     val finalDrops = batch.length - deliveries.length
     if finalDrops > 0 then
       drops(chainSecrets.length - 1) += finalDrops
+
+    val totalDrops = drops.iterator.sum
+    telemetry.incrementCounter("mixnet.round.submissions", totalIn.toLong)
+    telemetry.incrementCounter("mixnet.round.deliveries", deliveries.length.toLong)
+    telemetry.recordHistogram("mixnet.round.drops", totalDrops.toDouble)
+    var k = 0
+    while k < drops.length do
+      telemetry.incrementCounter(s"mixnet.round.drops_per_mixer.$k", drops(k).toLong)
+      k += 1
 
     RoundResult(
       deliveries = deliveries,

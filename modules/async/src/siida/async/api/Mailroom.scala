@@ -23,6 +23,7 @@
 package siida.async.api
 
 import siida.mixnet.api.MixChain
+import siida.observability.api.Telemetry
 
 /** Dead-drop / mailroom for offline recipients (spec 009).
  *
@@ -61,37 +62,46 @@ trait Mailroom:
 
 object Mailroom:
 
-  def inMemory(ttlMs: Long): Mailroom = new InMemoryMailroom(ttlMs)
+  def inMemory(ttlMs: Long, telemetry: Telemetry = Telemetry.noop): Mailroom =
+    new InMemoryMailroom(ttlMs, telemetry)
 
-  def persistent(path: java.nio.file.Path, ttlMs: Long): Either[String, Mailroom] =
-    PersistentMailroom.openOrCreate(path, ttlMs)
+  def persistent(
+    path:      java.nio.file.Path,
+    ttlMs:     Long,
+    telemetry: Telemetry = Telemetry.noop,
+  ): Either[String, Mailroom] =
+    PersistentMailroom.openOrCreate(path, ttlMs, telemetry)
 
   private[api] final case class Slot(env: MixChain.MailboxEnvelope, depositMs: Long)
 
-  private final class InMemoryMailroom(ttlMs: Long) extends Mailroom:
+  private final class InMemoryMailroom(ttlMs: Long, telemetry: Telemetry) extends Mailroom:
 
     private val byMailbox = scala.collection.mutable.HashMap.empty[Long, scala.collection.mutable.ArrayBuffer[Slot]]
     private var _size = 0
 
     def deposit(env: MixChain.MailboxEnvelope, nowMs: Long): Boolean =
       val id = MixChain.envelopeMailboxId(env)
-      if id == MixChain.CoverMailboxId || id == MixChain.BroadcastMailboxId then false
+      if id == MixChain.CoverMailboxId || id == MixChain.BroadcastMailboxId then
+        telemetry.incrementCounter("mailroom.deposit.rejected", 1L)
+        false
       else
         val slot = Slot(env, nowMs)
         byMailbox.getOrElseUpdate(id, scala.collection.mutable.ArrayBuffer.empty[Slot]) += slot
         _size += 1
+        telemetry.incrementCounter("mailroom.deposit.accepted", 1L)
+        telemetry.recordGauge("mailroom.backlog", _size.toDouble)
         true
 
     def retrieve(mailboxId: Long, nowMs: Long): Seq[MixChain.MailboxEnvelope] =
-      byMailbox.remove(mailboxId) match
-        case None => Vector.empty
+      val out = byMailbox.remove(mailboxId) match
+        case None => Vector.empty[MixChain.MailboxEnvelope]
         case Some(buf) =>
           val expiry = nowMs - ttlMs
           val live = buf.filter(_.depositMs >= expiry)
-          val dropped = buf.length - live.length
           _size -= buf.length
-          // Re-bucket nothing — caller's retrieve clears the mailbox
-          val _ = dropped
           live.iterator.map(_.env).toVector
+      telemetry.recordHistogram("mailroom.retrieve.envelopes_returned", out.length.toDouble)
+      telemetry.recordGauge("mailroom.backlog", _size.toDouble)
+      out
 
     def size: Int = _size
