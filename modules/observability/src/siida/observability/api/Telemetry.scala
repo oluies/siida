@@ -59,10 +59,21 @@ object Telemetry:
     def snapshot(): Snapshot                                 = Snapshot(Map.empty, Map.empty, Map.empty)
 
   /** Single-threaded in-memory telemetry. The caller is responsible
-   *  for not concurrently invoking the methods. A concurrent variant
-   *  is a follow-up spec.
+   *  for not concurrently invoking the methods. For multi-thread
+   *  use, see [[concurrent]] (spec 024).
    */
   def inMemory(): Telemetry = new InMemoryTelemetry()
+
+  /** Concurrent-safe in-memory telemetry (spec 024). Multiple
+   *  threads may freely record; snapshot reads do not block writers
+   *  (eventually-consistent).
+   *
+   *  Counters use `LongAdder` for high-contention throughput;
+   *  gauges use atomic reference semantics; histograms append into
+   *  a `ConcurrentLinkedQueue`. Snapshots drain & re-populate
+   *  histograms via copy-out — see implementation comments.
+   */
+  def concurrent(): Telemetry = new ConcurrentTelemetry()
 
   /** OpenTelemetry-bridge telemetry (spec 022). Delegates each
    *  recording to a caller-supplied `Meter`, gated by a privacy
