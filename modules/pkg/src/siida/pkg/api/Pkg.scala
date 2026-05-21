@@ -25,6 +25,7 @@ package siida.pkg.api
 import java.security.SecureRandom
 import siida.crypto.api.{Directory, HybridOnion, MultiSignedEntry, PqSignature}
 import siida.mixnet.api.MixChain
+import siida.observability.api.Telemetry
 
 /** Spec 005-pkg-keybootstrap — the Private Key Generator.
  *
@@ -60,6 +61,7 @@ object Pkg:
     threshold:           Int,
     domainSeparationTag: Array[Byte],
     initialMailboxId:    Long = 1L,
+    telemetry:           Telemetry = Telemetry.noop,
   ): Either[PkgError, Pkg] =
     if rosterPublicKeys.isEmpty || rosterPrivateKeys.isEmpty then
       Left(PkgError.EmptyRoster)
@@ -75,6 +77,7 @@ object Pkg:
         threshold,
         domainSeparationTag.clone(),
         initialMailboxId,
+        telemetry,
       ))
 
   private final class InMemoryPkg(
@@ -83,6 +86,7 @@ object Pkg:
     threshold:           Int,
     domainSeparationTag: Array[Byte],
     initialMailboxId:    Long,
+    telemetry:           Telemetry,
   ) extends Pkg:
 
     // Identity → (publicBundle, mailboxId, proof). Bytes-keyed via
@@ -109,6 +113,7 @@ object Pkg:
     ): Either[PkgError, IssuedIdentity] =
       val key = scala.collection.immutable.ArraySeq.unsafeWrapArray(identity.clone())
       if entries.contains(key) then
+        telemetry.incrementCounter("pkg.identity.rejected_duplicate", 1L)
         Left(PkgError.IdentityAlreadyExists)
       else
         val (secret, public) = HybridOnion.generateBundle(rng)
@@ -128,6 +133,8 @@ object Pkg:
             throw RuntimeException("PKG: MultiSignedEntry.assemble failed unexpectedly")
           case Right(entry) =>
             entries.update(key, (public, mailboxId, entry))
+            telemetry.incrementCounter("pkg.identity.issued", 1L)
+            telemetry.recordGauge("pkg.directory.size", entries.size.toDouble)
             Right(IssuedIdentity(
               secretBundle = secret,
               mailboxId    = mailboxId,
