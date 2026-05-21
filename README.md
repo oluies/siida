@@ -117,94 +117,57 @@ commands to produce them.
 > rows; see `specs/021-wire-telemetry/` through `specs/027-signed-chat/`
 > for individual scope and status.
 
-### Roadmap as a Wardley map (2026-05-21)
+### Roadmap as a Wardley-style quadrant (2026-05-21)
 
-Y-axis = visibility to the end user (anchor at top).
-X-axis = evolution: genesis → custom-built → product → commodity.
-Internal MVPs are clustered in the custom-built band; the "buy"
-fence sits at the Bouncy Castle / OpenTelemetry / Pekko line.
+Y-axis = visibility to the end user. X-axis = evolution from
+genesis to commodity. Internal MVPs cluster in the lower-left;
+the "buy" boundary (Bouncy Castle, OpenTelemetry, Pekko) sits
+mid-right. Rendered as a mermaid `quadrantChart` so it renders
+natively on GitHub.
 
 ```mermaid
-wardley
-  title Siida — Roadmap Wardley Map (2026-05-21)
-
-  anchor Private chat [0.96]
-  anchor Agent-to-agent msg [0.92]
-
-  component TerminalUI 026 [0.85, 0.15]
-  component ChatSession 010 [0.78, 0.32]
-  component AgentClient 008 [0.78, 0.38]
-
-  component SignedChat 027 [0.68, 0.20]
-  component AuthChat 023 [0.68, 0.22]
-  component SiidaClient 007 [0.62, 0.40]
-  component FriendDisc 019+020 [0.58, 0.38]
-
-  component Mixnet 004 [0.46, 0.42]
-  component Mailroom 009 [0.46, 0.40]
-  component PKG 005 [0.44, 0.40]
-  component ConfigChain 006 [0.42, 0.38]
-  component Telemetry 018+021+022+024+025 [0.38, 0.30]
-
-  component HybridOnion 012 [0.28, 0.45]
-  component MLDSA 013 [0.26, 0.48]
-  component IBE-IdEnc 015 [0.26, 0.50]
-  component BN254 002 [0.22, 0.52]
-  component PQ-CC 014 [0.24, 0.50]
-
-  component BouncyCastle 1.84 [0.62, 0.65]
-  component OpenTelemetry 1.43 [0.58, 0.66]
-  component Pekko + CE3 [0.66, 0.68]
-
-  component Mill / Scala 3 [0.72, 0.78]
-  component JDK 21 / Git [0.88, 0.85]
-
-  component Constitution 000 [0.40, 0.05]
-  component Bootstrap 001 [0.42, 0.08]
-  component Steward 003 [0.48, 0.10]
-  component PQ-Roadmap 011 [0.32, 0.10]
-  component PQ-Audit 016+017 [0.34, 0.12]
-
-  Private chat -> TerminalUI
-  Private chat -> ChatSession
-  Agent-to-agent msg -> AgentClient
-  TerminalUI -> ChatSession
-  ChatSession -> SiidaClient
-  ChatSession -> SignedChat
-  ChatSession -> AuthChat
-  ChatSession -> FriendDisc
-  AgentClient -> SiidaClient
-  SiidaClient -> Mixnet
-  SiidaClient -> Mailroom
-  SiidaClient -> PKG
-  SignedChat -> MLDSA
-  AuthChat -> HybridOnion
-  FriendDisc -> IBE-IdEnc
-  Mixnet -> HybridOnion
-  Mixnet -> Telemetry
-  Mailroom -> Telemetry
-  PKG -> ConfigChain
-  PKG -> Telemetry
-  ConfigChain -> MLDSA
-  HybridOnion -> BouncyCastle 1.84
-  MLDSA -> BouncyCastle 1.84
-  IBE-IdEnc -> BN254
-  PQ-CC -> MLDSA
-  Telemetry -> OpenTelemetry 1.43
-  SiidaClient -> Pekko + CE3
-  BouncyCastle 1.84 -> Mill / Scala 3
-  OpenTelemetry 1.43 -> Mill / Scala 3
-  Pekko + CE3 -> Mill / Scala 3
-  Mill / Scala 3 -> JDK 21 / Git
-  PQ-Audit -> BouncyCastle 1.84
+quadrantChart
+    title Siida — Roadmap (2026-05-21)
+    x-axis Genesis --> Commodity
+    y-axis Invisible infra --> User-visible
+    quadrant-1 Product / user-visible
+    quadrant-2 Bespoke / user-visible
+    quadrant-3 Bespoke / infra
+    quadrant-4 Product / infra
+    TerminalUI 026: [0.42, 0.95]
+    ChatSession 010: [0.36, 0.86]
+    AgentClient 008: [0.36, 0.82]
+    SignedChat 027: [0.30, 0.78]
+    AuthChat 023: [0.30, 0.74]
+    SiidaClient 007: [0.32, 0.66]
+    FriendDisc 019+020: [0.34, 0.62]
+    Mixnet 004: [0.38, 0.52]
+    Mailroom 009: [0.38, 0.48]
+    PKG 005: [0.36, 0.46]
+    ConfigChain 006: [0.34, 0.44]
+    Telemetry 018+021–025: [0.40, 0.40]
+    HybridOnion 012: [0.22, 0.38]
+    MLDSA 013: [0.20, 0.34]
+    IBE-IdEnc 015: [0.18, 0.32]
+    PQ-CC 014: [0.20, 0.30]
+    BN254 002: [0.16, 0.28]
+    PQ-Audit 016+017: [0.28, 0.18]
+    BouncyCastle 1.84: [0.66, 0.30]
+    OpenTelemetry 1.43: [0.62, 0.34]
+    Pekko + CE3: [0.70, 0.36]
+    Mill / Scala 3: [0.80, 0.20]
+    JDK 21 / Git: [0.92, 0.16]
+    Constitution 000: [0.28, 0.08]
+    Bootstrap 001: [0.32, 0.10]
+    Steward 003: [0.42, 0.12]
+    PQ-Roadmap 011: [0.22, 0.14]
 ```
 
-GitHub renders `wardley` blocks via the mermaid.ai extension; if the
-diagram fails to render in a viewer that only supports vanilla
-mermaid-js, the same coordinates can be pasted into
-[onlinewardleymaps.com](https://onlinewardleymaps.com) by translating
-each `component <name> [x, y]` to its OWM `component <name> [y, x]`
-form (axes swapped).
+The quadrant chart loses Wardley's value-chain edges (which spec
+depends on which) — for that view see the dependency lines in the
+individual spec READMEs under `specs/NNN-name/plan.md`. To view a
+true Wardley map with edges, paste the same components into
+[onlinewardleymaps.com](https://onlinewardleymaps.com).
 
 ## Build
 
