@@ -14,11 +14,13 @@ name: Scala Steward
 # the Go module under modules/crypto/native/ is OUT OF SCOPE for
 # automation. Scala Steward only sees JVM dependencies.
 #
-# Mill installation: we download the Mill assembly directly from
-# GitHub releases at the .mill-version-pinned version, install it on
-# PATH as `mill`, and tell scala-steward-action not to install Mill
-# itself (its Coursier path doesn't carry 0.12.5). This matches the
-# install strategy of the project's own ./mill launcher.
+# Mill installation: we download the mill-dist artefact from Maven
+# Central at the .mill-version-pinned version, install it on PATH as
+# `mill`, and tell scala-steward-action not to install Mill itself
+# (its Coursier path doesn't carry the pinned version). This matches
+# the install strategy of the project's own ./mill launcher — see the
+# comment at mill:36 for why Maven Central rather than GitHub
+# releases.
 
 on:
   workflow_dispatch:
@@ -38,27 +40,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup JDK 21
         # Match the project's constitution-pinned JDK so Mill (installed
         # below) loads under the same JVM contributors use locally.
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Mill from GitHub releases
-        # Mill 0.12.5 isn't in Coursier's app catalog (the path
-        # scala-steward-action takes). Download the assembly directly
-        # at the version pinned in .mill-version. This mirrors what
-        # the project's ./mill launcher does locally.
+      - name: Install Mill from Maven Central
+        # The pinned Mill isn't in Coursier's app catalog (the path
+        # scala-steward-action takes). Download mill-dist directly at
+        # the version pinned in .mill-version. This mirrors what the
+        # project's ./mill launcher does locally.
+        #
+        # From Mill 0.12.6+ the assembly is no longer uploaded to
+        # GitHub releases; mill-dist on Maven Central is the canonical
+        # home. The jar is the same shell-prefixed self-executable, so
+        # it installs onto PATH unchanged. Downloading from the old
+        # GitHub releases URL is what silently broke this workflow for
+        # nine weeks after .mill-version moved to 0.12.11 (last green
+        # run 2026-05-19, first 404 on 2026-05-25).
         run: |
           set -euo pipefail
           MILL_VERSION=$(tr -d '[:space:]' < .mill-version)
-          curl -fL -o /tmp/mill "https://github.com/com-lihaoyi/mill/releases/download/${MILL_VERSION}/${MILL_VERSION}-assembly"
+          curl -fL --retry 3 -o /tmp/mill "https://repo1.maven.org/maven2/com/lihaoyi/mill-dist/${MILL_VERSION}/mill-dist-${MILL_VERSION}.jar"
           chmod +x /tmp/mill
           sudo install -m 0755 /tmp/mill /usr/local/bin/mill
           mill --version
