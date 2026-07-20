@@ -170,7 +170,7 @@ object modules extends Module {
     override def ivyDeps = T {
       super.ivyDeps() ++ Agg(
         ivy"net.java.dev.jna:jna:5.18.1",
-        ivy"org.bouncycastle:bcprov-jdk18on:1.84",
+        ivy"org.bouncycastle:bcprov-jdk18on:1.85",
       )
     }
 
