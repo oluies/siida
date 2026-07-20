@@ -4,6 +4,19 @@ name: CI
 # runner. Kept in lockstep deliberately so a forced move between hosts
 # is a no-op. Step names and ordering MUST match the GitHub workflow;
 # scripts/check-ci-parity.sh enforces this at every push.
+#
+# Action VERSIONS intentionally lag the GitHub workflow. GitHub bumped
+# checkout/cache to majors declaring `using: node24` because GitHub's
+# hosted runners are retiring the Node 20 action runtime. That
+# deprecation is a GitHub-runner policy and does not apply here — the
+# Forgejo runner supplies its own Node, and act_runner images have
+# historically shipped Node 20, so a node24 action fails outright
+# rather than warning. We stay on v4 until the target Forgejo runner
+# is confirmed to provide Node 24.
+#
+# Parity is unaffected: check-ci-parity.sh compares the ordered list
+# of step NAMES, not action versions. This file already diverges in
+# implementation by design (see the Setup JDK 21 / Setup Go steps).
 
 on:
   push:

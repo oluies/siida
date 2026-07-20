@@ -15,22 +15,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version-file: modules/crypto/native/go.mod
           cache-dependency-path: modules/crypto/native/go.sum
 
       - name: Cache Mill out
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             out

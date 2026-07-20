@@ -33,6 +33,8 @@ permissions:
   # the branch push (validated in run 26078562115).
   contents: write
   pull-requests: write
+  # issues: write is for the failure-notification step only.
+  issues: write
 
 jobs:
   scala-steward:
@@ -87,3 +89,47 @@ jobs:
           author-name: 'Scala Steward'
           signing-key: ${{ secrets.STEWARD_SIGNING_KEY }}
           ignore-opts-files: false
+
+      - name: Report failure
+        # A scheduled workflow that fails notifies nobody: there is no
+        # PR to redden and no push author to email. This job broke on
+        # 2026-05-25 and went unnoticed for nine weekly runs until
+        # someone happened to look. Surface it as an issue instead.
+        #
+        # Idempotent by design — reuses one open issue per breakage so
+        # a persistent failure accumulates comments rather than opening
+        # a new issue every Monday. Close the issue once fixed; the
+        # next failure opens a fresh one.
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          LABEL='scala-steward-failure'
+
+          # Ensure the label exists; harmless if it already does.
+          gh label create "$LABEL" \
+            --description 'Scheduled Scala Steward run failed' \
+            --color 'B60205' 2>/dev/null || true
+
+          EXISTING=$(gh issue list --state open --label "$LABEL" \
+            --limit 1 --json number --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" \
+              --body "Scheduled run failed again: ${RUN_URL}"
+            echo "Commented on existing issue #${EXISTING}"
+          else
+            gh issue create \
+              --title 'Scala Steward scheduled run is failing' \
+              --label "$LABEL" \
+              --body "The weekly Scala Steward run failed.
+
+          Failing run: ${RUN_URL}
+
+          Dependency PRs are NOT being opened while this is broken. Close
+          this issue once the run is green again; the next failure will
+          open a fresh one."
+            echo 'Opened new tracking issue'
+          fi
