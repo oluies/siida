@@ -30,7 +30,7 @@ jobs:
           cache-dependency-path: modules/crypto/native/go.sum
 
       - name: Cache Mill out
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             out
