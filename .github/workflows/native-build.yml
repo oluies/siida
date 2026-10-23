@@ -58,10 +58,10 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: modules/crypto/native/go.mod
           cache: true
@@ -74,7 +74,7 @@ jobs:
         run: bash modules/crypto/native/build.sh
 
       - name: Upload artefact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: libsiida_bn254-${{ matrix.triple }}
           path: modules/crypto/native/${{ matrix.triple }}/libsiida_bn254.${{ matrix.ext }}
@@ -87,10 +87,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download all artefacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: _native-build-artefacts
 
@@ -108,7 +108,7 @@ jobs:
           rm -rf _native-build-artefacts
 
       - name: Open PR with the regenerated binaries
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: native-build/refresh-${{ github.run_id }}
           title: 'native: refresh BN254 shim binaries (3 arches)'
