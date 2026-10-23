@@ -24,7 +24,7 @@ jobs:
           java-version: '21'
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: modules/crypto/native/go.mod
           cache-dependency-path: modules/crypto/native/go.sum
