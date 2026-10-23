@@ -2,5 +2,37 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "description": [
+    "modules/crypto/native/ is excluded deliberately.",
+    "",
+    "That Go module is OUT OF SCOPE for automation per spec",
+    "003-dependency-automation. The instruction is recorded in two places:",
+    ".github/workflows/scala-steward.yml ('the Go module under",
+    "modules/crypto/native/ is OUT OF SCOPE for automation') and",
+    ".scala-steward.conf ('gnark-crypto bumps remain manual until a future",
+    "spec replaces the Go path').",
+    "",
+    "The bare onboarding config merged in #64 enabled the gomod manager",
+    "against the whole repo, and Renovate immediately opened #65 -- go 1.22",
+    "-> 1.26.8 plus gnark-crypto v0.13.0 -> v0.22.0 in exactly that",
+    "directory. That is the bump the spec reserves for a human, and it lands",
+    "on a native BN254 shim with its own build.sh and native-build workflow.",
+    "",
+    "The root go.mod is left managed: it declares the module and a go",
+    "directive with no require block, so there is nothing there to get wrong.",
+    "",
+    "JVM dependencies (build.mill, .mill-version) belong to Scala Steward --",
+    "see .scala-steward.conf. No guard is needed for them here because",
+    "Renovate has no Mill manager, so the two bots cannot collide on them."
+  ],
+  "ignorePaths": [
+    "modules/crypto/native/**"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions"
+    }
   ]
 }
