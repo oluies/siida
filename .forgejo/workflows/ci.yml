@@ -16,10 +16,10 @@ jobs:
     name: build / test (JVM 21)
     runs-on: docker
     container:
-      image: eclipse-temurin:21-jdk
+      image: eclipse-temurin:25-jdk
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup JDK 21
         # JDK already provided by eclipse-temurin:21-jdk container image;
@@ -39,7 +39,7 @@ jobs:
           go version
 
       - name: Cache Mill out
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             out
