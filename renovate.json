@@ -31,7 +31,36 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["github-actions"],
+      "description": [
+        "CAP. The constitution pins JDK 21 LTS, and ./mill enforces it at runtime:",
+        "it exits 1 unless `java -version` reports 21 ('the constitution pins JDK",
+        "21 LTS'). Makefile sets MILL ?= ./mill and the `headers` target runs",
+        "SiidaBuild.millSiidaHeaderCheck, so a JDK bump fails at the first",
+        "Mill-using CI step rather than anywhere informative.",
+        "",
+        "Renovate had grouped java-jdk 21 -> 25 and eclipse-temurin:21-jdk ->",
+        "25-jdk in with the action-version bumps, which is what reddened #79 at",
+        "'Check licence headers' (run 40000751608). Moving off 21 means changing",
+        "the constitution and the launcher guard together, so it is not a bump",
+        "Renovate should raise. The action versions in that group were fine and",
+        "landed separately.",
+        "",
+        "Remove this rule when the constitution moves to a newer LTS."
+      ],
+      "matchPackageNames": [
+        "java-jdk",
+        "java",
+        "eclipse-temurin"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github actions"
     }
   ]
