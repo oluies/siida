@@ -29,8 +29,8 @@ object Versions {
   val scala        = "3.6.4"
   val pekko        = "1.1.5"
   val catsEffect   = "3.5.7" // 3.7.0 available — Steward PR #19 deferred (crosses 3.5.x line)
-  val munit        = "1.3.0"
-  val munitCatsEff = "2.2.0"
+  val munit        = "1.3.6"
+  val munitCatsEff = "2.2.1"
 }
 
 // Shared base for every Siida module. Pins the Scala version, the
@@ -170,7 +170,7 @@ object modules extends Module {
     override def ivyDeps = T {
       super.ivyDeps() ++ Agg(
         ivy"net.java.dev.jna:jna:5.19.1",
-        ivy"org.bouncycastle:bcprov-jdk18on:1.84",
+        ivy"org.bouncycastle:bcprov-jdk18on:1.86",
       )
     }
 
@@ -238,15 +238,15 @@ object modules extends Module {
     // operators get one-call wiring via `OtelSetup.otlpHttp(...)`.
     override def ivyDeps = T {
       super.ivyDeps() ++ Agg(
-        ivy"io.opentelemetry:opentelemetry-api:1.43.0",
-        ivy"io.opentelemetry:opentelemetry-sdk:1.43.0",
-        ivy"io.opentelemetry:opentelemetry-exporter-otlp:1.43.0",
+        ivy"io.opentelemetry:opentelemetry-api:1.67.0",
+        ivy"io.opentelemetry:opentelemetry-sdk:1.67.0",
+        ivy"io.opentelemetry:opentelemetry-exporter-otlp:1.67.0",
       )
     }
     object test extends SiidaTests {
       override def ivyDeps = T {
         super.ivyDeps() ++ Agg(
-          ivy"io.opentelemetry:opentelemetry-sdk-testing:1.43.0",
+          ivy"io.opentelemetry:opentelemetry-sdk-testing:1.67.0",
         )
       }
     }
